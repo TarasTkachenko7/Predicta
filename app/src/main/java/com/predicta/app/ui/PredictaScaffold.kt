@@ -8,6 +8,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -34,30 +36,41 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.predicta.app.R
+import com.predicta.app.data.demo.DemoStateManager
 import com.predicta.app.feature_dashboard.presentation.DashboardScreen
-import com.predicta.app.feature_employees.presentation.EmployeeDetailsScreen
-import com.predicta.app.feature_tasks.presentation.TaskAssignmentScreen
+import com.predicta.app.feature_employees.presentation.EmployeeCardScreen
+import com.predicta.app.feature_employees.presentation.TeamVelocityScreen
+import com.predicta.app.feature_tasks.presentation.TaskReassignmentScreen
 import com.predicta.app.navigation.Screen
 import com.predicta.app.ui.theme.PrimaryBlue
 import com.predicta.app.ui.theme.SecondarySlate
-import com.predicta.app.ui.theme.SurfaceWhite
 import com.predicta.app.ui.theme.SuccessGreen
+import com.predicta.app.ui.theme.SurfaceWhite
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PredictaScaffold(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
+    val currentRoute = navBackStackEntry?.destination?.route
+    val demoStateManager: DemoStateManager = koinInject()
+
+    // Only show bottom bar on top-level screens
+    val showBottomBar = currentRoute in Screen.bottomNavItems.map { it.route }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -65,18 +78,20 @@ fun PredictaScaffold(modifier: Modifier = Modifier) {
             PredictaTopBar()
         },
         bottomBar = {
-            PredictaBottomBar(
-                currentRoute = currentDestination?.route,
-                onItemSelected = { screen ->
-                    navController.navigate(screen.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+            if (showBottomBar) {
+                PredictaBottomBar(
+                    currentRoute = currentRoute,
+                    onItemSelected = { screen ->
+                        navController.navigate(screen.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-            )
+                    },
+                )
+            }
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
@@ -85,14 +100,68 @@ fun PredictaScaffold(modifier: Modifier = Modifier) {
             startDestination = Screen.Dashboard.route,
             modifier = Modifier.padding(innerPadding),
         ) {
+            // Экран 1: Дашборд (Здоровье проекта)
             composable(Screen.Dashboard.route) {
-                DashboardScreen()
+                DashboardScreen(
+                    onNavigateToTeamVelocity = {
+                        navController.navigate(Screen.TeamVelocity.route) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
             }
-            composable(Screen.EmployeeDetails.route) {
-                EmployeeDetailsScreen()
+
+            // Экран 2: Анализ темпа работы (Команда)
+            composable(Screen.TeamVelocity.route) {
+                TeamVelocityScreen(
+                    onNavigateToEmployeeCard = { employeeId ->
+                        navController.navigate(
+                            Screen.EmployeeCard.createRoute(employeeId),
+                        )
+                    },
+                )
             }
-            composable(Screen.TaskAssignment.route) {
-                TaskAssignmentScreen()
+
+            // Экран 3: Карточка сотрудника & AI-инсайты
+            composable(
+                route = Screen.EmployeeCard.route,
+                arguments = listOf(
+                    navArgument("employeeId") { type = NavType.StringType },
+                ),
+            ) { backStackEntry ->
+                val employeeId = backStackEntry.arguments?.getString("employeeId") ?: ""
+                EmployeeCardScreen(
+                    employeeId = employeeId,
+                    demoStateManager = demoStateManager,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToReassign = { taskId ->
+                        navController.navigate(
+                            Screen.TaskReassignment.createRoute(taskId),
+                        )
+                    },
+                )
+            }
+
+            // Экран 4: Перераспределение задачи
+            composable(
+                route = Screen.TaskReassignment.route,
+                arguments = listOf(
+                    navArgument("taskId") { type = NavType.StringType },
+                ),
+            ) { backStackEntry ->
+                val taskId = backStackEntry.arguments?.getString("taskId") ?: ""
+                TaskReassignmentScreen(
+                    taskId = taskId,
+                    demoStateManager = demoStateManager,
+                    onNavigateBack = { navController.popBackStack() },
+                    onReassignmentComplete = {
+                        // Navigate back to Dashboard, clearing the stack
+                        navController.navigate(Screen.Dashboard.route) {
+                            popUpTo(Screen.Dashboard.route) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                )
             }
         }
     }
@@ -111,6 +180,14 @@ private fun PredictaTopBar() {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                Image(
+                    painter = painterResource(id = R.drawable.logo),
+                    contentDescription = "Predicta",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                )
                 Text(
                     text = "Predicta",
                     style = MaterialTheme.typography.titleLarge.copy(

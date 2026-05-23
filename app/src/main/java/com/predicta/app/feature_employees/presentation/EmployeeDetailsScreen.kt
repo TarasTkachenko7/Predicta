@@ -1,9 +1,11 @@
 package com.predicta.app.feature_employees.presentation
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,13 +19,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.TrendingUp
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,12 +39,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.predicta.app.feature_employees.domain.model.Employee
+import com.predicta.app.data.demo.DemoData
 import com.predicta.app.ui.theme.ErrorRed
 import com.predicta.app.ui.theme.PredictaShapes
 import com.predicta.app.ui.theme.PrimaryBlue
@@ -47,17 +53,27 @@ import com.predicta.app.ui.theme.SecondarySlate
 import com.predicta.app.ui.theme.SuccessGreen
 import com.predicta.app.ui.theme.SurfaceWhite
 import com.predicta.app.ui.theme.TextSecondary
-import com.predicta.app.ui.theme.WarningAmber
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun EmployeeDetailsScreen(
+fun TeamVelocityScreen(
+    onNavigateToEmployeeCard: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: EmployeeViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    EmployeeContent(
+    LaunchedEffect(Unit) {
+        viewModel.navigation.collect { action ->
+            when (action) {
+                is EmployeeNavAction.GoToEmployeeCard -> {
+                    onNavigateToEmployeeCard(action.employeeId)
+                }
+            }
+        }
+    }
+
+    TeamVelocityContent(
         state = state,
         onEvent = viewModel::onEvent,
         modifier = modifier,
@@ -65,12 +81,12 @@ fun EmployeeDetailsScreen(
 }
 
 @Composable
-private fun EmployeeContent(
+private fun TeamVelocityContent(
     state: EmployeeState,
     onEvent: (EmployeeEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (state.isLoading) {
+    if (state.isLoading || state.demoData == null) {
         Box(
             modifier = modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
@@ -84,6 +100,8 @@ private fun EmployeeContent(
         return
     }
 
+    val demo = state.demoData
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -93,33 +111,46 @@ private fun EmployeeContent(
     ) {
         item {
             Text(
-                text = "Team Members",
+                text = "Анализ темпа работы",
                 style = MaterialTheme.typography.titleMedium,
                 color = PrimaryBlue,
                 fontWeight = FontWeight.SemiBold,
             )
-        }
-
-        items(
-            items = state.employees,
-            key = { it.id },
-        ) { employee ->
-            EmployeeCard(employee = employee)
-        }
-
-        // ── Historical Performance section ──────────────────────────────
-        item {
-            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Historical Performance",
-                style = MaterialTheme.typography.titleMedium,
-                color = PrimaryBlue,
-                fontWeight = FontWeight.SemiBold,
+                text = "Бэкенд-команда · ${demo.sprintName}",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextSecondary,
+                modifier = Modifier.padding(top = 2.dp),
             )
         }
 
+        // ── Oleg's card ─────────────────────────────────────────────────
         item {
-            HistoricalPerformanceCard()
+            VelocityCard(
+                name = demo.olegName,
+                role = demo.olegRole,
+                done = demo.olegDone,
+                total = demo.olegTotal,
+                isHealthy = true,
+                onClick = { onEvent(EmployeeEvent.SelectEmployee(demo.olegId)) },
+            )
+        }
+
+        // ── Pavel's card ────────────────────────────────────────────────
+        item {
+            VelocityCard(
+                name = demo.pavelName,
+                role = demo.pavelRole,
+                done = demo.pavelDone,
+                total = demo.pavelTotal,
+                isHealthy = false,
+                onClick = { onEvent(EmployeeEvent.SelectEmployee(demo.pavelId)) },
+            )
+        }
+
+        // ── Summary card ────────────────────────────────────────────────
+        item {
+            SummaryCard(demo = demo)
         }
 
         item { Spacer(modifier = Modifier.height(8.dp)) }
@@ -127,150 +158,43 @@ private fun EmployeeContent(
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Employee Card with Circular Progress Indicators
+// Velocity Card — horizontal progress bar per employee
 // ──────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun EmployeeCard(
-    employee: Employee,
+private fun VelocityCard(
+    name: String,
+    role: String,
+    done: Int,
+    total: Int,
+    isHealthy: Boolean,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        shape = PredictaShapes.medium,
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
-        modifier = modifier
-            .fillMaxWidth()
-            .border(
-                width = 0.5.dp,
-                color = SecondarySlate.copy(alpha = 0.15f),
-                shape = PredictaShapes.medium,
-            ),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-        ) {
-            // Name & role
-            Text(
-                text = employee.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = PrimaryBlue,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = employee.role,
-                style = MaterialTheme.typography.bodySmall,
-                color = TextSecondary,
-                modifier = Modifier.padding(top = 2.dp),
-            )
+    val progress = if (total > 0) done.toFloat() / total else 0f
+    val barColor = if (isHealthy) SuccessGreen else ErrorRed
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Metric gauges
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-            ) {
-                MetricGauge(
-                    label = "Workload",
-                    value = employee.workloadPercentage,
-                    color = when {
-                        employee.workloadPercentage > 0.85f -> ErrorRed
-                        employee.workloadPercentage > 0.65f -> WarningAmber
-                        else -> PrimaryBlue
-                    },
-                )
-                MetricGauge(
-                    label = "Burnout Risk",
-                    value = employee.burnoutRisk,
-                    color = when {
-                        employee.burnoutRisk > 0.7f -> ErrorRed
-                        employee.burnoutRisk > 0.45f -> WarningAmber
-                        else -> SuccessGreen
-                    },
-                )
-            }
-        }
-    }
-}
-
-/**
- * Animated circular progress gauge with percentage label.
- */
-@Composable
-private fun MetricGauge(
-    label: String,
-    value: Float,
-    color: androidx.compose.ui.graphics.Color,
-    modifier: Modifier = Modifier,
-) {
-    // Animate from 0 to actual value on first composition
-    var targetValue by remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(value) { targetValue = value }
-
-    val animatedValue by animateFloatAsState(
-        targetValue = targetValue,
-        animationSpec = tween(durationMillis = 800),
-        label = "gauge_$label",
+    // Animate progress
+    var targetProgress by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(progress) { targetProgress = progress }
+    val animatedProgress by animateFloatAsState(
+        targetValue = targetProgress,
+        animationSpec = tween(durationMillis = 900),
+        label = "velocity_$name",
     )
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier,
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            // Background track
-            CircularProgressIndicator(
-                progress = { 1f },
-                modifier = Modifier.size(72.dp),
-                color = color.copy(alpha = 0.12f),
-                strokeWidth = 6.dp,
-                strokeCap = StrokeCap.Round,
-            )
-            // Foreground progress
-            CircularProgressIndicator(
-                progress = { animatedValue },
-                modifier = Modifier.size(72.dp),
-                color = color,
-                strokeWidth = 6.dp,
-                strokeCap = StrokeCap.Round,
-            )
-            // Percentage text
-            Text(
-                text = "${(animatedValue * 100).toInt()}%",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = color,
-            )
-        }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = TextSecondary,
-            modifier = Modifier.padding(top = 8.dp),
-        )
-    }
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Historical Performance Card
-// ──────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun HistoricalPerformanceCard(modifier: Modifier = Modifier) {
     Card(
         shape = PredictaShapes.medium,
         colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
         modifier = modifier
             .fillMaxWidth()
             .border(
-                width = 0.5.dp,
-                color = SecondarySlate.copy(alpha = 0.15f),
+                width = if (!isHealthy) 1.dp else 0.5.dp,
+                color = if (!isHealthy) ErrorRed.copy(alpha = 0.3f)
+                else SecondarySlate.copy(alpha = 0.15f),
                 shape = PredictaShapes.medium,
-            ),
+            )
+            .clickable(onClick = onClick),
     ) {
         Column(
             modifier = Modifier
@@ -278,44 +202,155 @@ private fun HistoricalPerformanceCard(modifier: Modifier = Modifier) {
                 .padding(20.dp),
         ) {
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.TrendingUp,
-                    contentDescription = null,
-                    tint = PrimaryBlue,
-                    modifier = Modifier.size(20.dp),
-                )
+                // Avatar
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isHealthy) SuccessGreen.copy(alpha = 0.12f)
+                            else ErrorRed.copy(alpha = 0.12f),
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Person,
+                        contentDescription = null,
+                        tint = if (isHealthy) SuccessGreen else ErrorRed,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = name,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = PrimaryBlue,
+                    )
+                    Text(
+                        text = role,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary,
+                    )
+                }
+
+                // Status badge
                 Text(
-                    text = "Sprint Metrics (Last 4 Sprints)",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = PrimaryBlue,
+                    text = "$done / $total",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = barColor,
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Icon(
+                    imageVector = Icons.Filled.ChevronRight,
+                    contentDescription = "Подробнее",
+                    tint = SecondarySlate.copy(alpha = 0.5f),
+                    modifier = Modifier.size(24.dp),
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Metric rows
-            MetricRow(label = "Avg. Story Points", value = "34.5 pts/sprint")
-            MetricRow(label = "On-Time Delivery", value = "88%")
-            MetricRow(label = "Bug Escape Rate", value = "4.2%")
-            MetricRow(label = "Team Satisfaction", value = "7.1 / 10")
+            // Horizontal velocity bar
+            LinearProgressIndicator(
+                progress = { animatedProgress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(12.dp)
+                    .clip(RoundedCornerShape(6.dp)),
+                color = barColor,
+                trackColor = barColor.copy(alpha = 0.12f),
+                strokeCap = StrokeCap.Round,
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Label under the bar
+            Text(
+                text = if (isHealthy) "Темп: Отличный" else "Темп: Критическое отставание",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium,
+                color = barColor,
+            )
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Summary Card
+// ──────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun SummaryCard(
+    demo: DemoData,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        shape = PredictaShapes.medium,
+        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                width = 0.5.dp,
+                color = SecondarySlate.copy(alpha = 0.15f),
+                shape = PredictaShapes.medium,
+            ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+        ) {
+            Text(
+                text = "Общая статистика",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = PrimaryBlue,
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            SummaryRow(
+                label = "Всего задач в спринте",
+                value = "${demo.olegTotal + demo.pavelTotal}",
+            )
+            SummaryRow(
+                label = "Закрыто",
+                value = "${demo.olegDone + demo.pavelDone}",
+            )
+            SummaryRow(
+                label = "Осталось",
+                value = "${(demo.olegTotal - demo.olegDone) + (demo.pavelTotal - demo.pavelDone)}",
+            )
+            SummaryRow(
+                label = "Статус проекта",
+                value = if (demo.isProjectDelayed) "Задержка ${demo.delayDays} дн." else "В срок",
+                valueColor = if (demo.isProjectDelayed) ErrorRed else SuccessGreen,
+            )
         }
     }
 }
 
 @Composable
-private fun MetricRow(
+private fun SummaryRow(
     label: String,
     value: String,
+    valueColor: Color = PrimaryBlue,
     modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
+            .padding(vertical = 5.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
@@ -327,7 +362,7 @@ private fun MetricRow(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
-            color = PrimaryBlue,
+            color = valueColor,
         )
     }
 }

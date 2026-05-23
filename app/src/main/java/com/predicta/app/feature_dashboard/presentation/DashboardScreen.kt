@@ -1,6 +1,11 @@
 package com.predicta.app.feature_dashboard.presentation
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -18,26 +23,37 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
@@ -58,6 +74,7 @@ import com.predicta.app.ui.theme.ErrorRed
 import com.predicta.app.ui.theme.PredictaShapes
 import com.predicta.app.ui.theme.PrimaryBlue
 import com.predicta.app.ui.theme.SecondarySlate
+import com.predicta.app.ui.theme.SuccessGreen
 import com.predicta.app.ui.theme.SurfaceWhite
 import com.predicta.app.ui.theme.TextSecondary
 import com.predicta.app.ui.theme.WarningAmber
@@ -65,10 +82,19 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun DashboardScreen(
+    onNavigateToTeamVelocity: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.navigation.collect { action ->
+            when (action) {
+                DashboardNavAction.GoToTeamVelocity -> onNavigateToTeamVelocity()
+            }
+        }
+    }
 
     DashboardContent(
         state = state,
@@ -104,10 +130,24 @@ private fun DashboardContent(
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
+        // ── Section: Sprint Status Widget ────────────────────────────────
+        item {
+            SprintStatusCard(
+                sprintName = state.sprintName,
+                isDelayed = state.isProjectDelayed,
+                delayDays = state.delayDays,
+                delayTrack = state.delayTrack,
+                completionPercent = state.sprintCompletionPercent,
+                elapsedDays = state.sprintElapsedDays,
+                totalDays = state.sprintTotalDays,
+                hasBeenReassigned = state.hasBeenReassigned,
+            )
+        }
+
         // ── Section: Sprint Velocity Chart ──────────────────────────────
         item {
             Text(
-                text = "Sprint Velocity",
+                text = "Темп команды (Story Points / день)",
                 style = MaterialTheme.typography.titleMedium,
                 color = PrimaryBlue,
                 fontWeight = FontWeight.SemiBold,
@@ -117,6 +157,7 @@ private fun DashboardContent(
         item {
             SprintVelocityChart(
                 teamPace = state.teamPace,
+                isDelayed = state.isProjectDelayed,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(220.dp),
@@ -127,7 +168,7 @@ private fun DashboardContent(
         if (state.alerts.isNotEmpty()) {
             item {
                 Text(
-                    text = "AI Alerts",
+                    text = "Предупреждения Predicta AI",
                     style = MaterialTheme.typography.titleMedium,
                     color = PrimaryBlue,
                     fontWeight = FontWeight.SemiBold,
@@ -149,8 +190,182 @@ private fun DashboardContent(
             }
         }
 
+        // ── Section: Action Button ──────────────────────────────────────
+        item {
+            Button(
+                onClick = { onEvent(DashboardEvent.NavigateToTeamVelocity) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = PredictaShapes.medium,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryBlue,
+                ),
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 4.dp,
+                ),
+            ) {
+                Text(
+                    text = "Посмотреть темп команды",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
+
         // Bottom spacer for comfortable scrolling above the nav bar
         item { Spacer(modifier = Modifier.height(8.dp)) }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Sprint Status Card — the hero widget
+// ──────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun SprintStatusCard(
+    sprintName: String,
+    isDelayed: Boolean,
+    delayDays: Int,
+    delayTrack: String,
+    completionPercent: Float,
+    elapsedDays: Int,
+    totalDays: Int,
+    hasBeenReassigned: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val gradientColors = if (isDelayed) {
+        listOf(Color(0xFFD32F2F), Color(0xFFB71C1C))
+    } else {
+        listOf(Color(0xFF2E7D32), Color(0xFF1B5E20))
+    }
+
+    // Animated completion progress
+    var targetProgress by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(completionPercent) { targetProgress = completionPercent }
+    val animatedProgress by animateFloatAsState(
+        targetValue = targetProgress,
+        animationSpec = tween(durationMillis = 1000),
+        label = "sprint_progress",
+    )
+
+    Card(
+        shape = PredictaShapes.large,
+        modifier = modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.linearGradient(gradientColors),
+                )
+                .padding(24.dp),
+        ) {
+            Column {
+                // Sprint label
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Icon(
+                        imageVector = if (isDelayed) Icons.Outlined.Warning
+                        else Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp),
+                    )
+                    Text(
+                        text = sprintName,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Status message
+                Text(
+                    text = if (isDelayed) {
+                        "Риск срыва дедлайна $delayTrack на $delayDays дня"
+                    } else {
+                        "Новый прогноз проекта: Сдача вовремя"
+                    },
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White.copy(alpha = 0.95f),
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Progress bar
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            text = "Выполнено: ${(animatedProgress * 100).toInt()}%",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.White.copy(alpha = 0.85f),
+                        )
+                        Text(
+                            text = "День $elapsedDays из $totalDays",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.White.copy(alpha = 0.85f),
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LinearProgressIndicator(
+                        progress = { animatedProgress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        color = Color.White,
+                        trackColor = Color.White.copy(alpha = 0.25f),
+                        strokeCap = StrokeCap.Round,
+                    )
+                }
+
+                // Reassignment success badge
+                AnimatedVisibility(
+                    visible = hasBeenReassigned && !isDelayed,
+                    enter = fadeIn(tween(600)) + slideInVertically(tween(600)),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .padding(top = 16.dp)
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White.copy(alpha = 0.2f))
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.CheckCircle,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Text(
+                            text = "Сроки в Jira обновлены. Проект выровнен.",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -161,9 +376,11 @@ private fun DashboardContent(
 @Composable
 private fun SprintVelocityChart(
     teamPace: List<TeamPace>,
+    isDelayed: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
+    val lineColor = if (isDelayed) ErrorRed else SuccessGreen
     val dayLabels = remember(teamPace) { teamPace.map { it.day } }
     val bottomAxisValueFormatter = remember(dayLabels) {
         CartesianValueFormatter { _, value, _ ->
@@ -172,9 +389,11 @@ private fun SprintVelocityChart(
     }
 
     LaunchedEffect(teamPace) {
-        modelProducer.runTransaction {
-            lineSeries {
-                series(teamPace.map { it.velocity.toDouble() })
+        if (teamPace.isNotEmpty()) {
+            modelProducer.runTransaction {
+                lineSeries {
+                    series(teamPace.map { it.velocity.toDouble() })
+                }
             }
         }
     }
@@ -192,11 +411,17 @@ private fun SprintVelocityChart(
             chart = rememberCartesianChart(
                 rememberLineCartesianLayer(
                     lineProvider = LineCartesianLayer.LineProvider.series(
-                        LineCartesianLayer.rememberLine(fill = remember { LineCartesianLayer.LineFill.single(fill(PrimaryBlue)) }),
+                        LineCartesianLayer.rememberLine(
+                            fill = remember(lineColor) {
+                                LineCartesianLayer.LineFill.single(fill(lineColor))
+                            },
+                        ),
                     ),
                 ),
                 startAxis = VerticalAxis.rememberStart(),
-                bottomAxis = HorizontalAxis.rememberBottom(valueFormatter = bottomAxisValueFormatter),
+                bottomAxis = HorizontalAxis.rememberBottom(
+                    valueFormatter = bottomAxisValueFormatter,
+                ),
             ),
             modelProducer = modelProducer,
             modifier = Modifier
@@ -219,6 +444,7 @@ private fun AlertCard(
     val severityColor = when (alert.severity) {
         "high" -> ErrorRed
         "medium" -> WarningAmber
+        "success" -> SuccessGreen
         else -> SecondarySlate
     }
 
@@ -250,7 +476,12 @@ private fun AlertCard(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = alert.severity.replaceFirstChar { it.uppercase() } + " Priority",
+                    text = when (alert.severity) {
+                        "high" -> "Критический"
+                        "medium" -> "Предупреждение"
+                        "success" -> "Успех"
+                        else -> "Инфо"
+                    },
                     style = MaterialTheme.typography.labelMedium,
                     color = severityColor,
                     fontWeight = FontWeight.SemiBold,
@@ -269,7 +500,7 @@ private fun AlertCard(
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Close,
-                    contentDescription = "Dismiss alert",
+                    contentDescription = "Скрыть",
                     tint = SecondarySlate.copy(alpha = 0.5f),
                     modifier = Modifier.size(18.dp),
                 )
