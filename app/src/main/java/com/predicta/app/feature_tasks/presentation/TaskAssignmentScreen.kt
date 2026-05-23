@@ -1,4 +1,4 @@
-package com.predicta.app.feature_tasks.presentation
+﻿package com.predicta.app.feature_tasks.presentation
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -82,7 +82,7 @@ fun TaskReassignmentScreen(
             Text(
                 text = "Задача не найдена",
                 style = MaterialTheme.typography.bodyLarge,
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         return
@@ -102,7 +102,7 @@ fun TaskReassignmentScreen(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Назад",
-                        tint = PrimaryBlue,
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                 }
                 Spacer(modifier = Modifier.width(4.dp))
@@ -110,7 +110,7 @@ fun TaskReassignmentScreen(
                     text = "Перераспределение задачи",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = PrimaryBlue,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
@@ -119,12 +119,12 @@ fun TaskReassignmentScreen(
         item {
             Card(
                 shape = PredictaShapes.medium,
-                colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier
                     .fillMaxWidth()
                     .border(
                         width = 0.5.dp,
-                        color = SecondarySlate.copy(alpha = 0.15f),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
                         shape = PredictaShapes.medium,
                     ),
             ) {
@@ -136,13 +136,13 @@ fun TaskReassignmentScreen(
                     Text(
                         text = "Задача",
                         style = MaterialTheme.typography.labelMedium,
-                        color = TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
                         text = task.title,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = PrimaryBlue,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
@@ -173,7 +173,7 @@ fun TaskReassignmentScreen(
                 Text(
                     text = "Эту задачу нельзя перераспределить",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
                 )
@@ -188,7 +188,7 @@ fun TaskReassignmentScreen(
                         .height(56.dp),
                     shape = PredictaShapes.medium,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryBlue,
+                        containerColor = MaterialTheme.colorScheme.primary,
                     ),
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 4.dp,
@@ -256,7 +256,7 @@ private fun TransferVisualization(
             Text(
                 text = "Перегружен",
                 style = MaterialTheme.typography.labelSmall,
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -264,7 +264,7 @@ private fun TransferVisualization(
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
             contentDescription = null,
-            tint = PrimaryBlue,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(32.dp),
         )
 
@@ -294,7 +294,7 @@ private fun TransferVisualization(
             Text(
                 text = "Свободен",
                 style = MaterialTheme.typography.labelSmall,
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -376,12 +376,12 @@ private fun RecommendedAssigneeCard(
                         text = name,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = PrimaryBlue,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
                         text = role,
                         style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
@@ -395,7 +395,7 @@ private fun RecommendedAssigneeCard(
                     Text(
                         text = "задач закрыто",
                         style = MaterialTheme.typography.labelSmall,
-                        color = TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -481,3 +481,4 @@ private fun SuccessCard(
         }
     }
 }
+

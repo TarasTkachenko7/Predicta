@@ -1,4 +1,4 @@
-package com.predicta.app.feature_employees.presentation
+﻿package com.predicta.app.feature_employees.presentation
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -143,7 +143,7 @@ private fun PavelCardContent(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Назад",
-                        tint = PrimaryBlue,
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                 }
                 Spacer(modifier = Modifier.width(4.dp))
@@ -151,7 +151,7 @@ private fun PavelCardContent(
                     text = "Карточка сотрудника",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = PrimaryBlue,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
@@ -191,7 +191,7 @@ private fun PavelCardContent(
                 text = "Текущие задачи",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = PrimaryBlue,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(top = 4.dp),
             )
         }
@@ -237,7 +237,7 @@ private fun OlegCardContent(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Назад",
-                        tint = PrimaryBlue,
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                 }
                 Spacer(modifier = Modifier.width(4.dp))
@@ -245,7 +245,7 @@ private fun OlegCardContent(
                     text = "Карточка сотрудника",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = PrimaryBlue,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
@@ -301,7 +301,7 @@ private fun OlegCardContent(
                                 "Олег получил ${assignedTasks.size} новую задачу. Она назначена, но еще не выполнена."
                             },
                             style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp),
                         )
                     }
@@ -315,7 +315,7 @@ private fun OlegCardContent(
                     text = "Новые задачи",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = PrimaryBlue,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(top = 4.dp),
                 )
             }
@@ -349,12 +349,12 @@ private fun EmployeeHeaderCard(
 
     Card(
         shape = PredictaShapes.medium,
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = modifier
             .fillMaxWidth()
             .border(
                 width = 0.5.dp,
-                color = SecondarySlate.copy(alpha = 0.15f),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
                 shape = PredictaShapes.medium,
             ),
     ) {
@@ -386,12 +386,12 @@ private fun EmployeeHeaderCard(
                     text = name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = PrimaryBlue,
+                    color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
                     text = role,
                     style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -405,7 +405,7 @@ private fun EmployeeHeaderCard(
                 Text(
                     text = "задач",
                     style = MaterialTheme.typography.labelSmall,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -419,12 +419,12 @@ private fun AssignedTaskCard(
 ) {
     Card(
         shape = PredictaShapes.medium,
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = modifier
             .fillMaxWidth()
             .border(
                 width = 0.5.dp,
-                color = PrimaryBlue.copy(alpha = 0.18f),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
                 shape = PredictaShapes.medium,
             ),
     ) {
@@ -448,7 +448,7 @@ private fun AssignedTaskCard(
                     text = task.title,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
-                    color = PrimaryBlue,
+                    color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
                     text = "Назначена Олегу · к выполнению",
@@ -468,6 +468,7 @@ private fun ForecastCard(
     modifier: Modifier = Modifier,
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
+    val planColor = MaterialTheme.colorScheme.primary
     val dayLabels = remember { listOf("Сейчас", "+1д", "+2д", "+3д", "+4д", "+5д", "+6д", "+7д", "+8д") }
     val bottomAxisValueFormatter = remember {
         CartesianValueFormatter { _, value, _ ->
@@ -488,12 +489,12 @@ private fun ForecastCard(
 
     Card(
         shape = PredictaShapes.medium,
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = modifier
             .fillMaxWidth()
             .border(
                 width = 0.5.dp,
-                color = SecondarySlate.copy(alpha = 0.15f),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
                 shape = PredictaShapes.medium,
             ),
     ) {
@@ -516,7 +517,7 @@ private fun ForecastCard(
                     text = "Прогноз дедлайна",
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold,
-                    color = PrimaryBlue,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
 
@@ -536,7 +537,7 @@ private fun ForecastCard(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                LegendItem(color = PrimaryBlue, label = "План")
+                LegendItem(color = MaterialTheme.colorScheme.primary, label = "План")
                 LegendItem(color = ErrorRed, label = "Факт")
             }
 
@@ -547,8 +548,8 @@ private fun ForecastCard(
                     rememberLineCartesianLayer(
                         lineProvider = LineCartesianLayer.LineProvider.series(
                             LineCartesianLayer.rememberLine(
-                                fill = remember {
-                                    LineCartesianLayer.LineFill.single(fill(PrimaryBlue))
+                                fill = remember(planColor) {
+                                    LineCartesianLayer.LineFill.single(fill(planColor))
                                 },
                             ),
                             LineCartesianLayer.rememberLine(
@@ -592,7 +593,7 @@ private fun LegendItem(
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -613,7 +614,7 @@ private fun AiInsightCard(
                 .background(
                     brush = Brush.linearGradient(
                         listOf(
-                            PrimaryBlue.copy(alpha = 0.06f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
                             Color(0xFFF3E5F5).copy(alpha = 0.3f),
                         ),
                     ),
@@ -628,14 +629,14 @@ private fun AiInsightCard(
                     Icon(
                         imageVector = Icons.Outlined.AutoAwesome,
                         contentDescription = null,
-                        tint = PrimaryBlue,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(22.dp),
                     )
                     Text(
                         text = "Аналитика Predicta AI",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
-                        color = PrimaryBlue,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
 
@@ -644,7 +645,7 @@ private fun AiInsightCard(
                 Text(
                     text = insight,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = MaterialTheme.typography.bodyMedium.lineHeight,
                 )
             }
@@ -661,8 +662,8 @@ private fun TaskCard(
     val statusColor = when (task.status) {
         TaskStatus.DONE -> SuccessGreen
         TaskStatus.IN_PROGRESS -> WarningAmber
-        TaskStatus.TODO -> SecondarySlate
-        TaskStatus.REASSIGNED -> PrimaryBlue
+        TaskStatus.TODO -> MaterialTheme.colorScheme.onSurfaceVariant
+        TaskStatus.REASSIGNED -> MaterialTheme.colorScheme.primary
     }
 
     val statusLabel = when (task.status) {
@@ -676,13 +677,13 @@ private fun TaskCard(
 
     Card(
         shape = PredictaShapes.medium,
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = modifier
             .fillMaxWidth()
             .animateContentSize()
             .border(
                 width = 0.5.dp,
-                color = SecondarySlate.copy(alpha = 0.15f),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
                 shape = PredictaShapes.medium,
             ),
     ) {
@@ -711,8 +712,8 @@ private fun TaskCard(
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = if (task.status == TaskStatus.REASSIGNED) {
-                            TextSecondary
-                        } else PrimaryBlue,
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else MaterialTheme.colorScheme.primary,
                         textDecoration = if (task.status == TaskStatus.REASSIGNED) {
                             TextDecoration.LineThrough
                         } else TextDecoration.None,
@@ -734,7 +735,7 @@ private fun TaskCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = PredictaShapes.medium,
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = PrimaryBlue,
+                        contentColor = MaterialTheme.colorScheme.primary,
                     ),
                 ) {
                     Icon(
@@ -753,3 +754,4 @@ private fun TaskCard(
         }
     }
 }
+

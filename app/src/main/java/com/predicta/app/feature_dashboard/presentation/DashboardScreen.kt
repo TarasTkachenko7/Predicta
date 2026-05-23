@@ -1,4 +1,4 @@
-package com.predicta.app.feature_dashboard.presentation
+﻿package com.predicta.app.feature_dashboard.presentation
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -115,7 +115,7 @@ private fun DashboardContent(
             contentAlignment = Alignment.Center,
         ) {
             CircularProgressIndicator(
-                color = PrimaryBlue,
+                color = MaterialTheme.colorScheme.primary,
                 strokeWidth = 3.dp,
                 modifier = Modifier.size(40.dp),
             )
@@ -149,7 +149,7 @@ private fun DashboardContent(
             Text(
                 text = "Темп команды (Story Points / день)",
                 style = MaterialTheme.typography.titleMedium,
-                color = PrimaryBlue,
+                color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold,
             )
         }
@@ -170,7 +170,7 @@ private fun DashboardContent(
                 Text(
                     text = "Предупреждения Predicta AI",
                     style = MaterialTheme.typography.titleMedium,
-                    color = PrimaryBlue,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 4.dp),
                 )
@@ -199,7 +199,7 @@ private fun DashboardContent(
                     .height(56.dp),
                 shape = PredictaShapes.medium,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryBlue,
+                    containerColor = MaterialTheme.colorScheme.primary,
                 ),
                 elevation = ButtonDefaults.buttonElevation(
                     defaultElevation = 4.dp,
@@ -400,10 +400,10 @@ private fun SprintVelocityChart(
 
     Card(
         shape = PredictaShapes.medium,
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = modifier.border(
             width = 0.5.dp,
-            color = SecondarySlate.copy(alpha = 0.15f),
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
             shape = PredictaShapes.medium,
         ),
     ) {
@@ -445,15 +445,15 @@ private fun AlertCard(
         "high" -> ErrorRed
         "medium" -> WarningAmber
         "success" -> SuccessGreen
-        else -> SecondarySlate
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Card(
         shape = PredictaShapes.medium,
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = modifier.border(
             width = 0.5.dp,
-            color = SecondarySlate.copy(alpha = 0.15f),
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
             shape = PredictaShapes.medium,
         ),
     ) {
@@ -489,7 +489,7 @@ private fun AlertCard(
                 Text(
                     text = alert.message,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp),
                 )
             }
@@ -501,10 +501,11 @@ private fun AlertCard(
                 Icon(
                     imageVector = Icons.Outlined.Close,
                     contentDescription = "Скрыть",
-                    tint = SecondarySlate.copy(alpha = 0.5f),
+                    tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                     modifier = Modifier.size(18.dp),
                 )
             }
         }
     }
 }
+

@@ -4,9 +4,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Assignment
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
@@ -34,6 +36,13 @@ sealed class Screen(
         unselectedIcon = Icons.Outlined.People,
     )
 
+    data object Settings : Screen(
+        route = "settings",
+        label = "Настройки",
+        selectedIcon = Icons.Filled.Settings,
+        unselectedIcon = Icons.Outlined.Settings,
+    )
+
     data object EmployeeCard : Screen(
         route = "employee_card/{employeeId}",
     ) {
@@ -48,6 +57,6 @@ sealed class Screen(
 
     companion object {
         /** Screens that appear in the bottom navigation bar. */
-        val bottomNavItems = listOf(Dashboard, TeamVelocity)
+        val bottomNavItems = listOf(Dashboard, TeamVelocity, Settings)
     }
 }

@@ -53,12 +53,10 @@ import com.predicta.app.data.demo.DemoStateManager
 import com.predicta.app.feature_dashboard.presentation.DashboardScreen
 import com.predicta.app.feature_employees.presentation.EmployeeCardScreen
 import com.predicta.app.feature_employees.presentation.TeamVelocityScreen
+import com.predicta.app.feature_settings.presentation.SettingsScreen
 import com.predicta.app.feature_tasks.presentation.TaskReassignmentScreen
 import com.predicta.app.navigation.Screen
-import com.predicta.app.ui.theme.PrimaryBlue
-import com.predicta.app.ui.theme.SecondarySlate
 import com.predicta.app.ui.theme.SuccessGreen
-import com.predicta.app.ui.theme.SurfaceWhite
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -120,6 +118,11 @@ fun PredictaScaffold(modifier: Modifier = Modifier) {
                         )
                     },
                 )
+            }
+
+            // Экран настроек
+            composable(Screen.Settings.route) {
+                SettingsScreen()
             }
 
             // Экран 3: Карточка сотрудника & AI-инсайты
@@ -194,14 +197,14 @@ private fun PredictaTopBar() {
                         fontWeight = FontWeight.Bold,
                         letterSpacing = (-0.5).sp,
                     ),
-                    color = PrimaryBlue,
+                    color = MaterialTheme.colorScheme.primary,
                 )
                 AiStatusIndicator()
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = SurfaceWhite,
-            scrolledContainerColor = SurfaceWhite,
+            containerColor = MaterialTheme.colorScheme.surface,
+            scrolledContainerColor = MaterialTheme.colorScheme.surface,
         ),
         modifier = Modifier.shadow(
             elevation = 2.dp,
@@ -241,7 +244,7 @@ private fun AiStatusIndicator() {
         Text(
             text = "AI Active",
             style = MaterialTheme.typography.labelSmall,
-            color = SecondarySlate.copy(alpha = 0.7f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -256,7 +259,7 @@ private fun PredictaBottomBar(
     onItemSelected: (Screen) -> Unit,
 ) {
     NavigationBar(
-        containerColor = SurfaceWhite,
+        containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,
         modifier = Modifier.shadow(
             elevation = 8.dp,
@@ -284,11 +287,11 @@ private fun PredictaBottomBar(
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = PrimaryBlue,
-                    selectedTextColor = PrimaryBlue,
-                    unselectedIconColor = SecondarySlate,
-                    unselectedTextColor = SecondarySlate,
-                    indicatorColor = PrimaryBlue.copy(alpha = 0.08f),
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                 ),
             )
         }

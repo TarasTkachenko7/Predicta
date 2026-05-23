@@ -1,4 +1,4 @@
-package com.predicta.app.feature_employees.presentation
+﻿package com.predicta.app.feature_employees.presentation
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
@@ -92,7 +92,7 @@ private fun TeamVelocityContent(
             contentAlignment = Alignment.Center,
         ) {
             CircularProgressIndicator(
-                color = PrimaryBlue,
+                color = MaterialTheme.colorScheme.primary,
                 strokeWidth = 3.dp,
                 modifier = Modifier.size(40.dp),
             )
@@ -113,13 +113,13 @@ private fun TeamVelocityContent(
             Text(
                 text = "Анализ темпа работы",
                 style = MaterialTheme.typography.titleMedium,
-                color = PrimaryBlue,
+                color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
                 text = "Бэкенд-команда · ${demo.sprintName}",
                 style = MaterialTheme.typography.bodySmall,
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp),
             )
         }
@@ -185,13 +185,13 @@ private fun VelocityCard(
 
     Card(
         shape = PredictaShapes.medium,
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = modifier
             .fillMaxWidth()
             .border(
                 width = if (!isHealthy) 1.dp else 0.5.dp,
                 color = if (!isHealthy) ErrorRed.copy(alpha = 0.3f)
-                else SecondarySlate.copy(alpha = 0.15f),
+                else MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
                 shape = PredictaShapes.medium,
             )
             .clickable(onClick = onClick),
@@ -231,12 +231,12 @@ private fun VelocityCard(
                         text = name,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = PrimaryBlue,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
                         text = role,
                         style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
@@ -253,7 +253,7 @@ private fun VelocityCard(
                 Icon(
                     imageVector = Icons.Filled.ChevronRight,
                     contentDescription = "Подробнее",
-                    tint = SecondarySlate.copy(alpha = 0.5f),
+                    tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                     modifier = Modifier.size(24.dp),
                 )
             }
@@ -296,12 +296,12 @@ private fun SummaryCard(
 ) {
     Card(
         shape = PredictaShapes.medium,
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = modifier
             .fillMaxWidth()
             .border(
                 width = 0.5.dp,
-                color = SecondarySlate.copy(alpha = 0.15f),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
                 shape = PredictaShapes.medium,
             ),
     ) {
@@ -314,7 +314,7 @@ private fun SummaryCard(
                 text = "Общая статистика",
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = PrimaryBlue,
+                color = MaterialTheme.colorScheme.primary,
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -344,7 +344,7 @@ private fun SummaryCard(
 private fun SummaryRow(
     label: String,
     value: String,
-    valueColor: Color = PrimaryBlue,
+    valueColor: Color = Color.Unspecified,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -356,13 +356,18 @@ private fun SummaryRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
-            color = valueColor,
+            color = if (valueColor == Color.Unspecified) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                valueColor
+            },
         )
     }
 }
+

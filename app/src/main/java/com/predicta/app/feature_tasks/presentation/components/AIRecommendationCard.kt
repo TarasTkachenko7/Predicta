@@ -1,4 +1,4 @@
-package com.predicta.app.feature_tasks.presentation.components
+﻿package com.predicta.app.feature_tasks.presentation.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
@@ -103,7 +103,7 @@ private fun AiCardContent(
                 Icon(
                     imageVector = Icons.Outlined.AutoAwesome,
                     contentDescription = "AI recommendation",
-                    tint = PrimaryBlue,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .size(22.dp)
                         .alpha(sparkleAlpha),
@@ -112,7 +112,7 @@ private fun AiCardContent(
                     text = "AI Recommendation",
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold,
-                    color = PrimaryBlue,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
 
@@ -123,7 +123,7 @@ private fun AiCardContent(
                 Icon(
                     imageVector = Icons.Outlined.Close,
                     contentDescription = "Dismiss recommendation",
-                    tint = SecondarySlate.copy(alpha = 0.5f),
+                    tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                     modifier = Modifier.size(16.dp),
                 )
             }
@@ -132,8 +132,9 @@ private fun AiCardContent(
         Text(
             text = recommendation,
             style = MaterialTheme.typography.bodyMedium,
-            color = PrimaryBlue.copy(alpha = 0.85f),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
             modifier = Modifier.padding(top = 8.dp),
         )
     }
 }
+

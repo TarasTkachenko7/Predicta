@@ -3,6 +3,8 @@ package com.predicta.app.di
 import com.predicta.app.data.demo.DemoStateManager
 import com.predicta.app.feature_dashboard.presentation.DashboardViewModel
 import com.predicta.app.feature_employees.presentation.EmployeeViewModel
+import com.predicta.app.settings.AppSettingsRepository
+import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -17,6 +19,9 @@ val appModule = module {
 
     // ── Demo State Manager (shared singleton) ───────────────────────────
     single { DemoStateManager() }
+
+    // ── App Settings ────────────────────────────────────────────────────
+    single { AppSettingsRepository(androidContext()) }
 
     // ── feature_dashboard ───────────────────────────────────────────────
     viewModel { DashboardViewModel(demoStateManager = get()) }
