@@ -1,5 +1,8 @@
 package com.predicta.app.feature_settings.presentation
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,24 +23,29 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.CloudQueue
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Sync
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -53,6 +61,7 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun SettingsScreen(
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
@@ -67,6 +76,18 @@ fun SettingsScreen(
     ) {
         item {
             SettingsHeader()
+        }
+
+        item {
+            ProfileCard(
+                userName = state.userName,
+                email = state.email,
+                role = state.role,
+                onLogout = {
+                    viewModel.onEvent(SettingsEvent.Logout)
+                    onLogout()
+                },
+            )
         }
 
         item {
@@ -114,9 +135,90 @@ private fun SettingsHeader(
                 color = MaterialTheme.colorScheme.primary,
             )
             Text(
-                text = "Персонализация демо и служебный статус",
+                text = "Профиль, оформление и состояние приложения",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProfileCard(
+    userName: String,
+    email: String,
+    role: String,
+    onLogout: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SettingsCard(modifier = modifier) {
+        SectionTitle(
+            icon = Icons.Outlined.Person,
+            title = "Профиль",
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = userName.firstOrNull()?.uppercase() ?: "P",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = userName.ifBlank { "Predicta User" },
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = email.ifBlank { "user@predicta.ai" },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = role.ifBlank { "manager" }.replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedButton(
+            onClick = onLogout,
+            modifier = Modifier.fillMaxWidth(),
+            shape = PredictaShapes.medium,
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.error,
+            ),
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.Logout,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(modifier = Modifier.size(8.dp))
+            Text(
+                text = "Выйти из аккаунта",
+                fontWeight = FontWeight.SemiBold,
             )
         }
     }
@@ -159,16 +261,28 @@ private fun ThemeOptionRow(
         ThemeMode.DARK -> Icons.Outlined.DarkMode
     }
     val accentColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val rowScale by animateFloatAsState(
+        targetValue = if (selected) 1.015f else 1f,
+        animationSpec = tween(durationMillis = 180),
+        label = "theme_option_scale",
+    )
+    val containerColor by animateColorAsState(
+        targetValue = if (selected) {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+        } else {
+            Color.Transparent
+        },
+        animationSpec = tween(durationMillis = 220),
+        label = "theme_option_container",
+    )
 
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .scale(rowScale)
             .clip(PredictaShapes.medium)
             .clickable(onClick = onClick)
-            .background(
-                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-                else Color.Transparent,
-            )
+            .background(containerColor)
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -218,16 +332,16 @@ private fun RuntimeStatusCard(
         Spacer(modifier = Modifier.height(14.dp))
 
         StatusRow(
-            icon = Icons.Outlined.CloudOff,
-            title = "Данные",
-            value = "Демо-режим",
-            description = "Запросы к бэку пока не выполняются",
+            icon = Icons.Outlined.CloudQueue,
+            title = "Синхронизация",
+            value = "Готово",
+            description = "Локальное состояние готово к подключению API",
         )
         StatusRow(
             icon = Icons.Outlined.AutoAwesome,
             title = "Predicta AI",
-            value = "Мок-сценарий",
-            description = "Инсайты заранее подготовлены для демонстрации",
+            value = "Активен",
+            description = "Аналитика встроена в клиентский слой приложения",
         )
     }
 }
@@ -245,7 +359,7 @@ private fun AppInfoCard(
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "Приложение готово к подключению реального API: текущий демо-слой можно заменить репозиторием, когда команда бэка отдаст контракты.",
+            text = "Клиентская часть подготовлена к промышленному API: экраны отделены от источника данных, а сетевой слой можно подключить без перестройки интерфейса.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

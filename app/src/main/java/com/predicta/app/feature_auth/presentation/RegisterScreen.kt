@@ -1,4 +1,4 @@
-package com.predicta.app.feature_auth.presentation
+﻿package com.predicta.app.feature_auth.presentation
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -35,8 +35,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.predicta.app.R
 import com.predicta.app.ui.theme.PredictaShapes
-import com.predicta.app.ui.theme.PrimaryBlue
-import com.predicta.app.ui.theme.SecondarySlate
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -164,16 +162,17 @@ fun RegisterScreen(
         ) {
             Text(
                 text = "Уже есть аккаунт? ",
-                color = SecondarySlate,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Normal,
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
                 text = "Войти",
-                color = PrimaryBlue,
+                color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
     }
 }
+

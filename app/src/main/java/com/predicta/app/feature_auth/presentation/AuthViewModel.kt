@@ -3,6 +3,7 @@ package com.predicta.app.feature_auth.presentation
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.predicta.app.feature_auth.data.session.UserSessionManager
 import com.predicta.app.feature_auth.domain.repository.AuthRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,6 +14,7 @@ import kotlinx.coroutines.launch
 
 class AuthViewModel(
     private val authRepository: AuthRepository,
+    private val sessionManager: UserSessionManager,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthState())
@@ -92,7 +94,8 @@ class AuthViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, globalError = null) }
             val result = authRepository.login(_state.value.email, _state.value.password)
-            result.onSuccess {
+            result.onSuccess { user ->
+                sessionManager.startSession(user)
                 _state.update { it.copy(isLoading = false, isSuccess = true) }
             }.onFailure { e ->
                 _state.update { it.copy(isLoading = false, globalError = e.message) }
@@ -119,7 +122,8 @@ class AuthViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, globalError = null) }
             val result = authRepository.register(_state.value.email, _state.value.password, _state.value.name)
-            result.onSuccess {
+            result.onSuccess { user ->
+                sessionManager.startSession(user)
                 _state.update { it.copy(isLoading = false, isSuccess = true) }
             }.onFailure { e ->
                 _state.update { it.copy(isLoading = false, globalError = e.message) }

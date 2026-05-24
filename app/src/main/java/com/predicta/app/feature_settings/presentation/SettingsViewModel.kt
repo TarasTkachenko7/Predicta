@@ -2,7 +2,9 @@ package com.predicta.app.feature_settings.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.predicta.app.feature_auth.data.session.UserSessionManager
 import com.predicta.app.feature_settings.data.repository.AppSettingsRepository
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,6 +13,7 @@ import kotlinx.coroutines.launch
 
 class SettingsViewModel(
     private val settingsRepository: AppSettingsRepository,
+    private val sessionManager: UserSessionManager,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsState())
@@ -18,9 +21,20 @@ class SettingsViewModel(
 
     init {
         viewModelScope.launch {
-            settingsRepository.settings.collect { appSettings ->
+            combine(
+                settingsRepository.settings,
+                sessionManager.session,
+            ) { appSettings, session ->
+                SettingsState(
+                    themeMode = appSettings.themeMode,
+                    userName = session.userName,
+                    email = session.email,
+                    role = session.role,
+                    isLoggedIn = session.isLoggedIn,
+                )
+            }.collect { settingsState ->
                 _state.update {
-                    it.copy(themeMode = appSettings.themeMode)
+                    settingsState
                 }
             }
         }
@@ -30,6 +44,9 @@ class SettingsViewModel(
         when (event) {
             is SettingsEvent.ChangeTheme -> {
                 settingsRepository.setThemeMode(event.themeMode)
+            }
+            SettingsEvent.Logout -> {
+                sessionManager.clearSession()
             }
         }
     }

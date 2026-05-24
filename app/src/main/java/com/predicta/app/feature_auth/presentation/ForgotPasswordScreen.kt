@@ -1,4 +1,4 @@
-package com.predicta.app.feature_auth.presentation
+﻿package com.predicta.app.feature_auth.presentation
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.predicta.app.R
 import com.predicta.app.ui.theme.PredictaShapes
-import com.predicta.app.ui.theme.SecondarySlate
 import com.predicta.app.ui.theme.SuccessGreen
 import org.koin.androidx.compose.koinViewModel
 
@@ -147,7 +146,7 @@ fun ForgotPasswordScreen(
                         }) {
                             Text(
                                 text = "Вернуться ко входу",
-                                color = SecondarySlate,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
@@ -225,7 +224,7 @@ fun ForgotPasswordScreen(
                         }) {
                             Text(
                                 text = "Отмена",
-                                color = SecondarySlate,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
@@ -310,7 +309,7 @@ fun ForgotPasswordScreen(
                         }) {
                             Text(
                                 text = "Отмена",
-                                color = SecondarySlate,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
@@ -352,3 +351,4 @@ fun ForgotPasswordScreen(
         }
     }
 }
+

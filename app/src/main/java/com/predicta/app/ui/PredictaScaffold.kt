@@ -8,6 +8,10 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +45,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -49,10 +54,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.predicta.app.R
-import com.predicta.app.data.demo.DemoStateManager
+import com.predicta.app.core.network.NetworkMonitor
+import com.predicta.app.feature_auth.data.session.UserSessionManager
 import com.predicta.app.feature_auth.presentation.ForgotPasswordScreen
 import com.predicta.app.feature_auth.presentation.LoginScreen
 import com.predicta.app.feature_auth.presentation.RegisterScreen
+import com.predicta.app.feature_connectivity.presentation.NoInternetScreen
 import com.predicta.app.feature_dashboard.presentation.DashboardScreen
 import com.predicta.app.feature_employees.presentation.EmployeeCardScreen
 import com.predicta.app.feature_employees.presentation.TeamVelocityScreen
@@ -68,6 +75,18 @@ fun PredictaScaffold(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    val networkMonitor: NetworkMonitor = koinInject()
+    val sessionManager: UserSessionManager = koinInject()
+    val isOnline by networkMonitor.isOnline.collectAsStateWithLifecycle()
+    val session by sessionManager.session.collectAsStateWithLifecycle()
+
+    if (!isOnline) {
+        NoInternetScreen(
+            onRetry = networkMonitor::refresh,
+            modifier = modifier,
+        )
+        return
+    }
 
     // Only show bottom bar on top-level screens
     val showBottomBar = currentRoute in Screen.bottomNavItems.map { it.route }
@@ -80,12 +99,20 @@ fun PredictaScaffold(modifier: Modifier = Modifier) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            if (showTopBar) {
+            AnimatedVisibility(
+                visible = showTopBar,
+                enter = fadeIn(tween(180)) + slideInVertically { -it / 2 },
+                exit = fadeOut(tween(120)) + slideOutVertically { -it / 2 },
+            ) {
                 PredictaTopBar()
             }
         },
         bottomBar = {
-            if (showBottomBar) {
+            AnimatedVisibility(
+                visible = showBottomBar,
+                enter = fadeIn(tween(180)) + slideInVertically { it / 2 },
+                exit = fadeOut(tween(120)) + slideOutVertically { it / 2 },
+            ) {
                 PredictaBottomBar(
                     currentRoute = currentRoute,
                     onItemSelected = { screen ->
@@ -104,8 +131,20 @@ fun PredictaScaffold(modifier: Modifier = Modifier) {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Login.route,
+            startDestination = if (session.isLoggedIn) Screen.Dashboard.route else Screen.Login.route,
             modifier = Modifier.padding(innerPadding),
+            enterTransition = {
+                fadeIn(tween(220)) + slideInHorizontally { it / 6 }
+            },
+            exitTransition = {
+                fadeOut(tween(140)) + slideOutHorizontally { -it / 8 }
+            },
+            popEnterTransition = {
+                fadeIn(tween(220)) + slideInHorizontally { -it / 6 }
+            },
+            popExitTransition = {
+                fadeOut(tween(140)) + slideOutHorizontally { it / 8 }
+            },
         ) {
             // Auth Flow
             composable(Screen.Login.route) {
@@ -156,7 +195,16 @@ fun PredictaScaffold(modifier: Modifier = Modifier) {
 
             // Экран настроек
             composable(Screen.Settings.route) {
-                SettingsScreen()
+                SettingsScreen(
+                    onLogout = {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    },
+                )
             }
 
             // Экран 3: Карточка сотрудника & AI-инсайты

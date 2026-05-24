@@ -1,6 +1,8 @@
 package com.predicta.app.di
 
 import com.predicta.app.data.demo.DemoStateManager
+import com.predicta.app.core.network.NetworkMonitor
+import com.predicta.app.feature_auth.data.session.UserSessionManager
 import com.predicta.app.feature_dashboard.presentation.DashboardViewModel
 import com.predicta.app.feature_employees.presentation.EmployeeViewModel
 import com.predicta.app.feature_employees.presentation.EmployeeCardViewModel
@@ -26,9 +28,13 @@ val appModule = module {
     // ── Demo State Manager (shared singleton) ───────────────────────────
     single { DemoStateManager() }
 
+    // ── App Runtime ─────────────────────────────────────────────────────
+    single { NetworkMonitor(androidContext()) }
+    single { UserSessionManager(androidContext()) }
+
     // ── Auth Feature ────────────────────────────────────────────────────
     single<AuthRepository> { AuthRepositoryImpl() }
-    viewModel { AuthViewModel(authRepository = get()) }
+    viewModel { AuthViewModel(authRepository = get(), sessionManager = get()) }
 
     // ── App Settings ────────────────────────────────────────────────────
     single { AppSettingsRepository(androidContext()) }
@@ -44,5 +50,5 @@ val appModule = module {
     viewModel { TaskReassignmentViewModel(savedStateHandle = get(), demoStateManager = get()) }
 
     // ── feature_settings ────────────────────────────────────────────────
-    viewModel { SettingsViewModel(settingsRepository = get()) }
+    viewModel { SettingsViewModel(settingsRepository = get(), sessionManager = get()) }
 }
