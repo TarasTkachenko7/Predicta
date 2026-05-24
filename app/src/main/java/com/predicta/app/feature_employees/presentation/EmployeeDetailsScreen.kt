@@ -46,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.predicta.app.data.demo.DemoData
+import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.theme.ErrorRed
 import com.predicta.app.ui.theme.PredictaShapes
 import com.predicta.app.ui.theme.PrimaryBlue
@@ -188,11 +189,10 @@ private fun VelocityCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = modifier
             .fillMaxWidth()
-            .border(
-                width = if (!isHealthy) 1.dp else 0.5.dp,
-                color = if (!isHealthy) ErrorRed.copy(alpha = 0.3f)
-                else MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
+            .liquidGlass(
                 shape = PredictaShapes.medium,
+                blurRadius = 0.dp,
+                isActive = !isHealthy,
             )
             .clickable(onClick = onClick),
     ) {
@@ -299,10 +299,9 @@ private fun SummaryCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = modifier
             .fillMaxWidth()
-            .border(
-                width = 0.5.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
+            .liquidGlass(
                 shape = PredictaShapes.medium,
+                blurRadius = 0.dp,
             ),
     ) {
         Column(

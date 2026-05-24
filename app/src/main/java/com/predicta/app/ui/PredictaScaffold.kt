@@ -66,6 +66,7 @@ import com.predicta.app.feature_employees.presentation.TeamVelocityScreen
 import com.predicta.app.feature_settings.presentation.SettingsScreen
 import com.predicta.app.feature_tasks.presentation.TaskReassignmentScreen
 import com.predicta.app.navigation.Screen
+import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.theme.SuccessGreen
 import org.koin.compose.koinInject
 
@@ -290,6 +291,13 @@ private fun PredictaTopBar() {
             elevation = 2.dp,
             ambientColor = Color.Black.copy(alpha = 0.06f),
             spotColor = Color.Black.copy(alpha = 0.06f),
+        ).liquidGlass(
+            shape = RoundedCornerShape(
+                bottomStart = 20.dp,
+                bottomEnd = 20.dp,
+            ),
+            blurRadius = 0.dp,
+            liquidIntensity = 0.6f,
         ),
     )
 }
@@ -345,6 +353,13 @@ private fun PredictaBottomBar(
             elevation = 8.dp,
             ambientColor = Color.Black.copy(alpha = 0.04f),
             spotColor = Color.Black.copy(alpha = 0.04f),
+        ).liquidGlass(
+            shape = RoundedCornerShape(
+                topStart = 24.dp,
+                topEnd = 24.dp,
+            ),
+            blurRadius = 0.dp,
+            liquidIntensity = 0.6f,
         ),
     ) {
         Screen.bottomNavItems.forEach { screen ->

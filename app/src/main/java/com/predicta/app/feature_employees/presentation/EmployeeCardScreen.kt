@@ -73,6 +73,7 @@ import com.predicta.app.data.demo.DemoData
 import com.predicta.app.data.demo.DemoStateManager
 import com.predicta.app.data.demo.DemoTask
 import com.predicta.app.data.demo.TaskStatus
+import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.theme.ErrorRed
 import com.predicta.app.ui.theme.PredictaShapes
 import com.predicta.app.ui.theme.PrimaryBlue
@@ -268,10 +269,11 @@ private fun OlegCardContent(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(
-                        width = 1.dp,
-                        color = SuccessGreen.copy(alpha = 0.2f),
+                    .liquidGlass(
                         shape = PredictaShapes.medium,
+                        blurRadius = 0.dp,
+                        tintColor = SuccessGreen,
+                        tintAlpha = 0.08f,
                     ),
             ) {
                 Row(
@@ -352,10 +354,9 @@ private fun EmployeeHeaderCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = modifier
             .fillMaxWidth()
-            .border(
-                width = 0.5.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
+            .liquidGlass(
                 shape = PredictaShapes.medium,
+                blurRadius = 0.dp,
             ),
     ) {
         Row(
@@ -422,10 +423,10 @@ private fun AssignedTaskCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = modifier
             .fillMaxWidth()
-            .border(
-                width = 0.5.dp,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+            .liquidGlass(
                 shape = PredictaShapes.medium,
+                blurRadius = 0.dp,
+                isActive = true,
             ),
     ) {
         Row(
@@ -492,10 +493,9 @@ private fun ForecastCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = modifier
             .fillMaxWidth()
-            .border(
-                width = 0.5.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
+            .liquidGlass(
                 shape = PredictaShapes.medium,
+                blurRadius = 0.dp,
             ),
     ) {
         Column(
@@ -605,7 +605,13 @@ private fun AiInsightCard(
 ) {
     Card(
         shape = PredictaShapes.medium,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .liquidGlass(
+                shape = PredictaShapes.medium,
+                blurRadius = 0.dp,
+                isActive = true,
+            ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Box(
@@ -681,10 +687,10 @@ private fun TaskCard(
         modifier = modifier
             .fillMaxWidth()
             .animateContentSize()
-            .border(
-                width = 0.5.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
+            .liquidGlass(
                 shape = PredictaShapes.medium,
+                blurRadius = 0.dp,
+                isActive = canReassign,
             ),
     ) {
         Column(
@@ -754,4 +760,3 @@ private fun TaskCard(
         }
     }
 }
-

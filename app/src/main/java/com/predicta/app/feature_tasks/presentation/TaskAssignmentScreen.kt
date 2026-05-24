@@ -53,6 +53,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.predicta.app.data.demo.DemoStateManager
 import com.predicta.app.data.demo.DemoTask
 import com.predicta.app.data.demo.TaskStatus
+import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.theme.ErrorRed
 import com.predicta.app.ui.theme.PredictaShapes
 import com.predicta.app.ui.theme.PrimaryBlue
@@ -141,10 +142,9 @@ fun TaskReassignmentScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(
-                        width = 0.5.dp,
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
+                    .liquidGlass(
                         shape = PredictaShapes.medium,
+                        blurRadius = 0.dp,
                     ),
             ) {
                 Column(
@@ -337,10 +337,12 @@ private fun RecommendedAssigneeCard(
         ),
         modifier = modifier
             .fillMaxWidth()
-            .border(
-                width = 1.dp,
-                color = SuccessGreen.copy(alpha = 0.2f),
+            .liquidGlass(
                 shape = PredictaShapes.medium,
+                blurRadius = 0.dp,
+                tintColor = SuccessGreen,
+                tintAlpha = 0.07f,
+                isActive = true,
             ),
     ) {
         Column(
@@ -436,7 +438,15 @@ private fun SuccessCard(
     ) {
         Card(
             shape = PredictaShapes.large,
-            modifier = modifier.fillMaxWidth(),
+            modifier = modifier
+                .fillMaxWidth()
+                .liquidGlass(
+                    shape = PredictaShapes.large,
+                    blurRadius = 0.dp,
+                    tintColor = SuccessGreen,
+                    tintAlpha = 0.06f,
+                    isActive = true,
+                ),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         ) {
             Box(
@@ -499,4 +509,3 @@ private fun SuccessCard(
         }
     }
 }
-

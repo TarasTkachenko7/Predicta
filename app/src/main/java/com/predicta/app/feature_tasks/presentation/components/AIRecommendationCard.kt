@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.theme.PredictaShapes
 import com.predicta.app.ui.theme.PrimaryBlue
 import com.predicta.app.ui.theme.SecondarySlate
@@ -86,6 +87,11 @@ private fun AiCardContent(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .liquidGlass(
+                shape = PredictaShapes.medium,
+                blurRadius = 0.dp,
+                isActive = true,
+            )
             .clip(PredictaShapes.medium)
             .background(AiCardBackground)
             .padding(16.dp),

@@ -70,6 +70,7 @@ import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
 import com.predicta.app.feature_dashboard.domain.model.GlobalAlert
 import com.predicta.app.feature_dashboard.domain.model.TeamPace
+import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.theme.ErrorRed
 import com.predicta.app.ui.theme.PredictaShapes
 import com.predicta.app.ui.theme.PrimaryBlue
@@ -401,10 +402,10 @@ private fun SprintVelocityChart(
     Card(
         shape = PredictaShapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = modifier.border(
-            width = 0.5.dp,
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
+        modifier = modifier.liquidGlass(
             shape = PredictaShapes.medium,
+            blurRadius = 0.dp,
+            liquidIntensity = 0.8f,
         ),
     ) {
         CartesianChartHost(
@@ -451,10 +452,10 @@ private fun AlertCard(
     Card(
         shape = PredictaShapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = modifier.border(
-            width = 0.5.dp,
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
+        modifier = modifier.liquidGlass(
             shape = PredictaShapes.medium,
+            blurRadius = 0.dp,
+            isActive = alert.severity == "high",
         ),
     ) {
         Row(

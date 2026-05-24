@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.predicta.app.R
 import com.predicta.app.feature_settings.domain.model.ThemeMode
+import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.theme.PredictaShapes
 import com.predicta.app.ui.theme.SuccessGreen
 import org.koin.androidx.compose.koinViewModel
@@ -460,10 +461,10 @@ private fun SettingsCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = modifier
             .fillMaxWidth()
-            .border(
-                width = 0.5.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+            .liquidGlass(
                 shape = PredictaShapes.medium,
+                blurRadius = 0.dp,
+                liquidIntensity = 0.9f,
             ),
     ) {
         Column(
