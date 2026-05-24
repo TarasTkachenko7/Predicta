@@ -56,6 +56,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisGuidelineComponent
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLabelComponent
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLineComponent
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisTickComponent
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLine
@@ -382,6 +386,18 @@ private fun SprintVelocityChart(
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
     val lineColor = if (isDelayed) ErrorRed else SuccessGreen
+    val axisLabel = rememberAxisLabelComponent(
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    val axisLine = rememberAxisLineComponent(
+        fill = fill(MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)),
+    )
+    val axisTick = rememberAxisTickComponent(
+        fill = fill(MaterialTheme.colorScheme.outline.copy(alpha = 0.45f)),
+    )
+    val axisGuideline = rememberAxisGuidelineComponent(
+        fill = fill(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)),
+    )
     val dayLabels = remember(teamPace) { teamPace.map { it.day } }
     val bottomAxisValueFormatter = remember(dayLabels) {
         CartesianValueFormatter { _, value, _ ->
@@ -419,8 +435,17 @@ private fun SprintVelocityChart(
                         ),
                     ),
                 ),
-                startAxis = VerticalAxis.rememberStart(),
+                startAxis = VerticalAxis.rememberStart(
+                    line = axisLine,
+                    label = axisLabel,
+                    tick = axisTick,
+                    guideline = axisGuideline,
+                ),
                 bottomAxis = HorizontalAxis.rememberBottom(
+                    line = axisLine,
+                    label = axisLabel,
+                    tick = axisTick,
+                    guideline = axisGuideline,
                     valueFormatter = bottomAxisValueFormatter,
                 ),
             ),
