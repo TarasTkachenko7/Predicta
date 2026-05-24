@@ -6,7 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.predicta.app.settings.AppSettingsRepository
+import com.predicta.app.feature_settings.data.repository.AppSettingsRepository
 import com.predicta.app.ui.PredictaScaffold
 import com.predicta.app.ui.theme.PredictaTheme
 import org.koin.android.ext.android.inject

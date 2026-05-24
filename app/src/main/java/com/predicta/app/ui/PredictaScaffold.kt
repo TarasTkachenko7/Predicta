@@ -50,6 +50,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.predicta.app.R
 import com.predicta.app.data.demo.DemoStateManager
+import com.predicta.app.feature_auth.presentation.ForgotPasswordScreen
+import com.predicta.app.feature_auth.presentation.LoginScreen
+import com.predicta.app.feature_auth.presentation.RegisterScreen
 import com.predicta.app.feature_dashboard.presentation.DashboardScreen
 import com.predicta.app.feature_employees.presentation.EmployeeCardScreen
 import com.predicta.app.feature_employees.presentation.TeamVelocityScreen
@@ -65,15 +68,21 @@ fun PredictaScaffold(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val demoStateManager: DemoStateManager = koinInject()
 
     // Only show bottom bar on top-level screens
     val showBottomBar = currentRoute in Screen.bottomNavItems.map { it.route }
+    val showTopBar = currentRoute !in listOf(
+        Screen.Login.route,
+        Screen.Register.route,
+        Screen.ForgotPassword.route,
+    )
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            PredictaTopBar()
+            if (showTopBar) {
+                PredictaTopBar()
+            }
         },
         bottomBar = {
             if (showBottomBar) {
@@ -95,9 +104,34 @@ fun PredictaScaffold(modifier: Modifier = Modifier) {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Dashboard.route,
+            startDestination = Screen.Login.route,
             modifier = Modifier.padding(innerPadding),
         ) {
+            // Auth Flow
+            composable(Screen.Login.route) {
+                LoginScreen(
+                    onNavigateToDashboard = {
+                        navController.navigate(Screen.Dashboard.route) {
+                            popUpTo(Screen.Login.route) { inclusive = true }
+                        }
+                    },
+                    onNavigateToRegister = { navController.navigate(Screen.Register.route) },
+                    onNavigateToForgotPassword = { navController.navigate(Screen.ForgotPassword.route) }
+                )
+            }
+
+            composable(Screen.Register.route) {
+                RegisterScreen(
+                    onNavigateBackToLogin = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.ForgotPassword.route) {
+                ForgotPasswordScreen(
+                    onNavigateBackToLogin = { navController.popBackStack() }
+                )
+            }
+
             // Экран 1: Дашборд (Здоровье проекта)
             composable(Screen.Dashboard.route) {
                 DashboardScreen(
@@ -135,7 +169,6 @@ fun PredictaScaffold(modifier: Modifier = Modifier) {
                 val employeeId = backStackEntry.arguments?.getString("employeeId") ?: ""
                 EmployeeCardScreen(
                     employeeId = employeeId,
-                    demoStateManager = demoStateManager,
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToReassign = { taskId ->
                         navController.navigate(
@@ -155,7 +188,6 @@ fun PredictaScaffold(modifier: Modifier = Modifier) {
                 val taskId = backStackEntry.arguments?.getString("taskId") ?: ""
                 TaskReassignmentScreen(
                     taskId = taskId,
-                    demoStateManager = demoStateManager,
                     onNavigateBack = { navController.popBackStack() },
                     onReassignmentComplete = {
                         // Navigate back to Dashboard, clearing the stack

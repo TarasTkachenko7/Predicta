@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
-import com.predicta.app.settings.ThemeMode
+import com.predicta.app.feature_settings.domain.model.ThemeMode
 
 private val PredictaLightColorScheme = lightColorScheme(
     primary = PrimaryBlue,

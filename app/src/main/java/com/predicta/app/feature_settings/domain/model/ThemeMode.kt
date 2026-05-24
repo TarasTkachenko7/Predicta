@@ -1,4 +1,4 @@
-package com.predicta.app.settings
+package com.predicta.app.feature_settings.domain.model
 
 enum class ThemeMode(
     val storageValue: String,

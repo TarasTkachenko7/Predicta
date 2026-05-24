@@ -22,6 +22,10 @@ sealed class Screen(
     val unselectedIcon: ImageVector = Icons.Outlined.Dashboard,
 ) {
 
+    data object Login : Screen("login")
+    data object Register : Screen("register")
+    data object ForgotPassword : Screen("forgot_password")
+
     data object Dashboard : Screen(
         route = "dashboard",
         label = "Проект",

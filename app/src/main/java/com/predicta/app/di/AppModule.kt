@@ -3,7 +3,13 @@ package com.predicta.app.di
 import com.predicta.app.data.demo.DemoStateManager
 import com.predicta.app.feature_dashboard.presentation.DashboardViewModel
 import com.predicta.app.feature_employees.presentation.EmployeeViewModel
-import com.predicta.app.settings.AppSettingsRepository
+import com.predicta.app.feature_employees.presentation.EmployeeCardViewModel
+import com.predicta.app.feature_auth.data.repository.AuthRepositoryImpl
+import com.predicta.app.feature_auth.domain.repository.AuthRepository
+import com.predicta.app.feature_auth.presentation.AuthViewModel
+import com.predicta.app.feature_settings.data.repository.AppSettingsRepository
+import com.predicta.app.feature_settings.presentation.SettingsViewModel
+import com.predicta.app.feature_tasks.presentation.TaskReassignmentViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -20,6 +26,10 @@ val appModule = module {
     // ── Demo State Manager (shared singleton) ───────────────────────────
     single { DemoStateManager() }
 
+    // ── Auth Feature ────────────────────────────────────────────────────
+    single<AuthRepository> { AuthRepositoryImpl() }
+    viewModel { AuthViewModel(authRepository = get()) }
+
     // ── App Settings ────────────────────────────────────────────────────
     single { AppSettingsRepository(androidContext()) }
 
@@ -28,4 +38,11 @@ val appModule = module {
 
     // ── feature_employees (Team Velocity + Employee Card) ───────────────
     viewModel { EmployeeViewModel(demoStateManager = get()) }
+    viewModel { EmployeeCardViewModel(savedStateHandle = get(), demoStateManager = get()) }
+
+    // ── feature_tasks ───────────────────────────────────────────────────
+    viewModel { TaskReassignmentViewModel(savedStateHandle = get(), demoStateManager = get()) }
+
+    // ── feature_settings ────────────────────────────────────────────────
+    viewModel { SettingsViewModel(settingsRepository = get()) }
 }

@@ -1,6 +1,8 @@
-package com.predicta.app.settings
+package com.predicta.app.feature_settings.data.repository
 
 import android.content.Context
+import com.predicta.app.feature_settings.domain.model.AppSettings
+import com.predicta.app.feature_settings.domain.model.ThemeMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

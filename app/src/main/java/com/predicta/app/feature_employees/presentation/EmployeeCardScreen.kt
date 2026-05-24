@@ -1,4 +1,4 @@
-﻿package com.predicta.app.feature_employees.presentation
+package com.predicta.app.feature_employees.presentation
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -83,28 +83,30 @@ import com.predicta.app.ui.theme.TextSecondary
 import com.predicta.app.ui.theme.WarningAmber
 import kotlinx.coroutines.delay
 
+import org.koin.androidx.compose.koinViewModel
+
 @Composable
 fun EmployeeCardScreen(
     employeeId: String,
-    demoStateManager: DemoStateManager,
     onNavigateBack: () -> Unit,
     onNavigateToReassign: (String) -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: EmployeeCardViewModel = koinViewModel(),
 ) {
-    val demoData by demoStateManager.demoState.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
-    val isPavel = employeeId == DemoStateManager.PAVEL_ID
+    if (state.isLoading) return
 
-    if (isPavel) {
+    if (state.isPavel) {
         PavelCardContent(
-            demo = demoData,
+            state = state,
             onBack = onNavigateBack,
             onReassign = onNavigateToReassign,
             modifier = modifier,
         )
     } else {
         OlegCardContent(
-            demo = demoData,
+            state = state,
             onBack = onNavigateBack,
             modifier = modifier,
         )
@@ -117,7 +119,7 @@ fun EmployeeCardScreen(
 
 @Composable
 private fun PavelCardContent(
-    demo: DemoData,
+    state: EmployeeCardState,
     onBack: () -> Unit,
     onReassign: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -159,19 +161,19 @@ private fun PavelCardContent(
         // ── Employee header card ────────────────────────────────────────
         item {
             EmployeeHeaderCard(
-                name = demo.pavelName,
-                role = demo.pavelRole,
-                done = demo.pavelDone,
-                total = demo.pavelTotal,
-                isHealthy = false,
+                name = state.name,
+                role = state.role,
+                done = state.done,
+                total = state.total,
+                isHealthy = state.isHealthy,
             )
         }
 
         // ── Forecast chart (plan vs fact) ───────────────────────────────
         item {
             ForecastCard(
-                predictedDays = demo.pavelPredictedDays,
-                deadlineDays = demo.pavelDeadlineDays,
+                predictedDays = state.predictedDays,
+                deadlineDays = state.deadlineDays,
             )
         }
 
@@ -181,7 +183,7 @@ private fun PavelCardContent(
                 visible = showAiInsight,
                 enter = fadeIn(tween(800)) + slideInVertically(tween(800)),
             ) {
-                AiInsightCard(insight = demo.pavelAiInsight)
+                AiInsightCard(insight = state.aiInsight)
             }
         }
 
@@ -197,7 +199,7 @@ private fun PavelCardContent(
         }
 
         itemsIndexed(
-            items = demo.pavelTasks,
+            items = state.tasks,
             key = { _, task -> task.id },
         ) { _, task ->
             TaskCard(
@@ -216,13 +218,11 @@ private fun PavelCardContent(
 
 @Composable
 private fun OlegCardContent(
-    demo: DemoData,
+    state: EmployeeCardState,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val assignedTasks = demo.pavelTasks.filter { task ->
-        task.assigneeId == DemoStateManager.OLEG_ID && task.status == TaskStatus.REASSIGNED
-    }
+    val assignedTasks = state.tasks
 
     LazyColumn(
         modifier = modifier
@@ -252,11 +252,11 @@ private fun OlegCardContent(
 
         item {
             EmployeeHeaderCard(
-                name = demo.olegName,
-                role = demo.olegRole,
-                done = demo.olegDone,
-                total = demo.olegTotal,
-                isHealthy = true,
+                name = state.name,
+                role = state.role,
+                done = state.done,
+                total = state.total,
+                isHealthy = state.isHealthy,
             )
         }
 

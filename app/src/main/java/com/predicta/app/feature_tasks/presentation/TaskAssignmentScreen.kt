@@ -1,4 +1,4 @@
-﻿package com.predicta.app.feature_tasks.presentation
+package com.predicta.app.feature_tasks.presentation
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -59,22 +59,41 @@ import com.predicta.app.ui.theme.PrimaryBlue
 import com.predicta.app.ui.theme.SecondarySlate
 import com.predicta.app.ui.theme.SuccessGreen
 import com.predicta.app.ui.theme.SurfaceWhite
-import com.predicta.app.ui.theme.TextSecondary
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun TaskReassignmentScreen(
     taskId: String,
-    demoStateManager: DemoStateManager,
     onNavigateBack: () -> Unit,
     onReassignmentComplete: () -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: TaskReassignmentViewModel = koinViewModel(),
 ) {
-    val demoData by demoStateManager.demoState.collectAsStateWithLifecycle()
-    val task = demoData.pavelTasks.find { it.id == taskId }
-    var isReassigned by remember { mutableStateOf(false) }
-    val canReassign = task?.status == TaskStatus.IN_PROGRESS || task?.status == TaskStatus.TODO
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
-    if (task == null) {
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        viewModel.navigation.collect { action ->
+            when (action) {
+                TaskReassignmentNavAction.GoToDashboard -> onReassignmentComplete()
+            }
+        }
+    }
+
+    if (state.isLoading) {
+        Box(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "Загрузка...",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        return
+    }
+
+    if (state.taskId.isEmpty()) {
         Box(
             modifier = modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
@@ -139,7 +158,7 @@ fun TaskReassignmentScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        text = task.title,
+                        text = state.taskTitle,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,
@@ -152,24 +171,24 @@ fun TaskReassignmentScreen(
         // ── Transfer visualization ──────────────────────────────────────
         item {
             TransferVisualization(
-                fromName = demoData.pavelName,
-                toName = demoData.olegName,
+                fromName = state.fromName,
+                toName = state.toName,
             )
         }
 
         // ── Recommended assignee ────────────────────────────────────────
         item {
             RecommendedAssigneeCard(
-                name = demoData.olegName,
-                role = demoData.olegRole,
-                done = demoData.olegDone,
-                total = demoData.olegTotal,
+                name = state.toName,
+                role = state.toRole,
+                done = state.toDone,
+                total = state.toTotal,
             )
         }
 
         // ── Confirm button or Success state ─────────────────────────────
         item {
-            if (!canReassign && !isReassigned) {
+            if (!state.canReassign && !state.isReassigned) {
                 Text(
                     text = "Эту задачу нельзя перераспределить",
                     style = MaterialTheme.typography.bodyMedium,
@@ -177,11 +196,10 @@ fun TaskReassignmentScreen(
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
                 )
-            } else if (!isReassigned) {
+            } else if (!state.isReassigned) {
                 Button(
                     onClick = {
-                        demoStateManager.reassignTask(taskId)
-                        isReassigned = true
+                        viewModel.onEvent(TaskReassignmentEvent.ConfirmReassignment)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -207,7 +225,7 @@ fun TaskReassignmentScreen(
                     )
                 }
             } else {
-                SuccessCard(onGoToDashboard = onReassignmentComplete)
+                SuccessCard(onGoToDashboard = { viewModel.onEvent(TaskReassignmentEvent.CompleteReassignment) })
             }
         }
 

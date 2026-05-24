@@ -46,18 +46,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.predicta.app.R
-import com.predicta.app.settings.AppSettingsRepository
-import com.predicta.app.settings.ThemeMode
+import com.predicta.app.feature_settings.domain.model.ThemeMode
 import com.predicta.app.ui.theme.PredictaShapes
 import com.predicta.app.ui.theme.SuccessGreen
-import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
-    settingsRepository: AppSettingsRepository = koinInject(),
+    viewModel: SettingsViewModel = koinViewModel(),
 ) {
-    val settings by settingsRepository.settings.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     LazyColumn(
         modifier = modifier
@@ -72,8 +71,8 @@ fun SettingsScreen(
 
         item {
             ThemeSettingsCard(
-                selectedMode = settings.themeMode,
-                onModeSelected = settingsRepository::setThemeMode,
+                selectedMode = state.themeMode,
+                onModeSelected = { viewModel.onEvent(SettingsEvent.ChangeTheme(it)) },
             )
         }
 
