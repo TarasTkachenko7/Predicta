@@ -31,6 +31,17 @@ class AuthViewModel(
             is AuthEvent.NameChanged -> {
                 _state.update { it.copy(name = event.value, nameError = null, globalError = null) }
             }
+            AuthEvent.FillDemoCredentials -> {
+                _state.update {
+                    it.copy(
+                        email = "demo@predicta.ai",
+                        password = "demo123",
+                        emailError = null,
+                        passwordError = null,
+                        globalError = null,
+                    )
+                }
+            }
             is AuthEvent.RecoveryCodeChanged -> {
                 _state.update { it.copy(recoveryCode = event.value, recoveryCodeError = null, globalError = null) }
             }

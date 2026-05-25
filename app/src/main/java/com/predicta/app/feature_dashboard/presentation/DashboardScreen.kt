@@ -74,6 +74,7 @@ import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
 import com.predicta.app.feature_dashboard.domain.model.GlobalAlert
 import com.predicta.app.feature_dashboard.domain.model.TeamPace
+import com.predicta.app.ui.components.AnimatedNumberText
 import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.theme.ErrorRed
 import com.predicta.app.ui.theme.PredictaShapes
@@ -316,8 +317,10 @@ private fun SprintStatusCard(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        Text(
-                            text = "Выполнено: ${(animatedProgress * 100).toInt()}%",
+                        AnimatedNumberText(
+                            value = (animatedProgress * 100).toInt(),
+                            prefix = "Выполнено: ",
+                            suffix = "%",
                             style = MaterialTheme.typography.labelMedium,
                             color = Color.White.copy(alpha = 0.85f),
                         )

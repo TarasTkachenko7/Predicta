@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,7 +47,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.predicta.app.data.demo.DemoData
+import com.predicta.app.ui.components.AnimatedNumberText
 import com.predicta.app.ui.modifier.liquidGlass
+import com.predicta.app.ui.modifier.pressScale
 import com.predicta.app.ui.theme.ErrorRed
 import com.predicta.app.ui.theme.PredictaShapes
 import com.predicta.app.ui.theme.PrimaryBlue
@@ -174,6 +177,7 @@ private fun VelocityCard(
 ) {
     val progress = if (total > 0) done.toFloat() / total else 0f
     val barColor = if (isHealthy) SuccessGreen else ErrorRed
+    val interactionSource = remember { MutableInteractionSource() }
 
     // Animate progress
     var targetProgress by remember { mutableFloatStateOf(0f) }
@@ -194,7 +198,12 @@ private fun VelocityCard(
                 blurRadius = 0.dp,
                 isActive = !isHealthy,
             )
-            .clickable(onClick = onClick),
+            .pressScale(interactionSource)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+            ),
     ) {
         Column(
             modifier = Modifier
@@ -241,10 +250,12 @@ private fun VelocityCard(
                 }
 
                 // Status badge
-                Text(
-                    text = "$done / $total",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                AnimatedNumberText(
+                    value = done,
+                    suffix = " / $total",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
                     color = barColor,
                 )
 

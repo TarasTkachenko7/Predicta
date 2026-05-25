@@ -39,8 +39,10 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -77,6 +79,7 @@ import com.predicta.app.data.demo.DemoData
 import com.predicta.app.data.demo.DemoStateManager
 import com.predicta.app.data.demo.DemoTask
 import com.predicta.app.data.demo.TaskStatus
+import com.predicta.app.ui.components.AnimatedNumberText
 import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.theme.ErrorRed
 import com.predicta.app.ui.theme.PredictaShapes
@@ -122,6 +125,7 @@ fun EmployeeCardScreen(
 // Pavel's Card — The main demo scenario screen
 // ──────────────────────────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PavelCardContent(
     state: EmployeeCardState,
@@ -131,9 +135,19 @@ private fun PavelCardContent(
 ) {
     // Simulate AI "typing" effect
     var showAiInsight by remember { mutableStateOf(false) }
+    var showInsightSheet by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         delay(600)
         showAiInsight = true
+    }
+
+    if (showInsightSheet) {
+        AiInsightBottomSheet(
+            insight = state.aiInsight,
+            predictedDays = state.predictedDays,
+            deadlineDays = state.deadlineDays,
+            onDismiss = { showInsightSheet = false },
+        )
     }
 
     LazyColumn(
@@ -188,7 +202,10 @@ private fun PavelCardContent(
                 visible = showAiInsight,
                 enter = fadeIn(tween(800)) + slideInVertically(tween(800)),
             ) {
-                AiInsightCard(insight = state.aiInsight)
+                AiInsightCard(
+                    insight = state.aiInsight,
+                    onOpenDetails = { showInsightSheet = true },
+                )
             }
         }
 
@@ -401,10 +418,12 @@ private fun EmployeeHeaderCard(
             }
 
             Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "$done / $total",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
+                AnimatedNumberText(
+                    value = done,
+                    suffix = " / $total",
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
                     color = statusColor,
                 )
                 Text(
@@ -626,6 +645,7 @@ private fun LegendItem(
 @Composable
 private fun AiInsightCard(
     insight: String,
+    onOpenDetails: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -679,8 +699,111 @@ private fun AiInsightCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = MaterialTheme.typography.bodyMedium.lineHeight,
                 )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                OutlinedButton(
+                    onClick = onOpenDetails,
+                    shape = PredictaShapes.medium,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "Разобрать инсайт",
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AiInsightBottomSheet(
+    insight: String,
+    predictedDays: Int,
+    deadlineDays: Int,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Text(
+                text = "Как Predicta пришла к выводу",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            InsightReasonRow(
+                title = "Темп ниже плана",
+                value = "$predictedDays дн.",
+                description = "Прогноз завершения превышает дедлайн в $deadlineDays дня.",
+            )
+            InsightReasonRow(
+                title = "Риск перегруза",
+                value = "High",
+                description = "Открытые задачи сконцентрированы на одном исполнителе.",
+            )
+            InsightReasonRow(
+                title = "Рекомендация",
+                value = "Reassign",
+                description = "Перенести часть нагрузки на свободного участника команды.",
+            )
+            Text(
+                text = insight,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(18.dp))
+        }
+    }
+}
+
+@Composable
+private fun InsightReasonRow(
+    title: String,
+    value: String,
+    description: String,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .liquidGlass(
+                shape = PredictaShapes.medium,
+                blurRadius = 0.dp,
+                isActive = true,
+            )
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text(
+            text = value,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+        )
     }
 }
 

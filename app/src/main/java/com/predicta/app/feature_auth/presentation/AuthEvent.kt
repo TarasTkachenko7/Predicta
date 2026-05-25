@@ -4,6 +4,7 @@ sealed interface AuthEvent {
     data class EmailChanged(val value: String) : AuthEvent
     data class PasswordChanged(val value: String) : AuthEvent
     data class NameChanged(val value: String) : AuthEvent
+    data object FillDemoCredentials : AuthEvent
     data object LoginSubmit : AuthEvent
     data object RegisterSubmit : AuthEvent
     data object ResetSubmit : AuthEvent
