@@ -14,5 +14,9 @@ data class EmployeeCardState(
     val predictedDays: Int = 0,
     val deadlineDays: Int = 0,
     val aiInsight: String = "",
+    val riskFactors: List<String> = emptyList(),
     val tasks: List<DemoTask> = emptyList(),
+    val isDeepWorkActive: Boolean = false,
+    val showRecoveryForecast: Boolean = false,
+    val recoveryForecastData: List<Float> = emptyList(),
 )

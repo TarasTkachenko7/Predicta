@@ -46,11 +46,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.predicta.app.R
@@ -67,23 +69,24 @@ import com.predicta.app.feature_settings.presentation.SettingsScreen
 import com.predicta.app.feature_tasks.presentation.TaskReassignmentScreen
 import com.predicta.app.navigation.Screen
 import com.predicta.app.ui.modifier.liquidGlass
-import com.predicta.app.ui.theme.SuccessGreen
-import org.koin.compose.koinInject
+import com.predicta.app.ui.theme.SemanticSuccess
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PredictaScaffold(modifier: Modifier = Modifier) {
+fun PredictaScaffold(
+    modifier: Modifier = Modifier,
+    appViewModel: AppViewModel = koinViewModel()
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val networkMonitor: NetworkMonitor = koinInject()
-    val sessionManager: UserSessionManager = koinInject()
-    val isOnline by networkMonitor.isOnline.collectAsStateWithLifecycle()
-    val session by sessionManager.session.collectAsStateWithLifecycle()
+    val isOnline by appViewModel.isOnline.collectAsStateWithLifecycle()
+    val session by appViewModel.session.collectAsStateWithLifecycle()
 
     if (!isOnline) {
         NoInternetScreen(
-            onRetry = networkMonitor::refresh,
+            onRetry = appViewModel::retryNetwork,
             modifier = modifier,
         )
         return
@@ -115,16 +118,7 @@ fun PredictaScaffold(modifier: Modifier = Modifier) {
                 exit = fadeOut(tween(120)) + slideOutVertically { it / 2 },
             ) {
                 PredictaBottomBar(
-                    currentRoute = currentRoute,
-                    onItemSelected = { screen ->
-                        navController.navigate(screen.route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
+                    navController = navController,
                 )
             }
         },
@@ -180,6 +174,13 @@ fun PredictaScaffold(modifier: Modifier = Modifier) {
                             launchSingleTop = true
                         }
                     },
+                    onResolveAlert = { alertId ->
+                        if (alertId == "alert_pavel_burnout") {
+                            navController.navigate(Screen.EmployeeCard.createRoute("emp_2"))
+                        } else {
+                            navController.navigate(Screen.TeamVelocity.route)
+                        }
+                    }
                 )
             }
 
@@ -264,14 +265,6 @@ private fun PredictaTopBar() {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.logo),
-                    contentDescription = "Predicta",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                )
                 Text(
                     text = "Predicta",
                     style = MaterialTheme.typography.titleLarge.copy(
@@ -327,7 +320,7 @@ private fun AiStatusIndicator() {
                 .size(8.dp)
                 .alpha(alpha)
                 .clip(CircleShape)
-                .background(SuccessGreen),
+                .background(SemanticSuccess),
         )
         Text(
             text = "AI Active",
@@ -343,9 +336,12 @@ private fun AiStatusIndicator() {
 
 @Composable
 private fun PredictaBottomBar(
-    currentRoute: String?,
-    onItemSelected: (Screen) -> Unit,
+    navController: NavHostController,
 ) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+    val currentExactRoute = currentDestination?.route
+
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,
@@ -362,21 +358,37 @@ private fun PredictaBottomBar(
             liquidIntensity = 0.6f,
         ),
     ) {
-        Screen.bottomNavItems.forEach { screen ->
-            val isSelected = currentRoute == screen.route
+        Screen.bottomNavItems.forEach { item ->
+            val isSelected = currentDestination?.hierarchy?.any { it.route == item.route } == true
+            val isExactlyOnRootOfThisTab = currentExactRoute == item.route
 
             NavigationBarItem(
                 selected = isSelected,
-                onClick = { onItemSelected(screen) },
+                onClick = {
+                    // CRITICAL FIX: DO NOT use 'if (isSelected) return' or 'if (selected) return'.
+                    // We ONLY skip navigation if the user is ALREADY exactly on the root destination of this tab.
+                    if (!isExactlyOnRootOfThisTab) {
+                        navController.navigate(item.route) {
+                            // Pop up to the start destination of the graph to avoid building up a large stack
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            // Avoid multiple copies of the same destination when reselecting the same item
+                            launchSingleTop = true
+                            // Restore state when reselecting a previously selected item
+                            restoreState = true
+                        }
+                    }
+                },
                 icon = {
                     Icon(
-                        imageVector = if (isSelected) screen.selectedIcon else screen.unselectedIcon,
-                        contentDescription = screen.label,
+                        imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
+                        contentDescription = item.label,
                     )
                 },
                 label = {
                     Text(
-                        text = screen.label,
+                        text = item.label,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                     )

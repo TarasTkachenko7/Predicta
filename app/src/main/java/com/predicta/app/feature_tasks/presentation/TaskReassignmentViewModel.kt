@@ -16,7 +16,8 @@ import kotlinx.coroutines.launch
 
 class TaskReassignmentViewModel(
     savedStateHandle: SavedStateHandle,
-    private val demoStateManager: DemoStateManager,
+    private val getDemoStateUseCase: com.predicta.app.feature_dashboard.domain.usecase.GetDemoStateUseCase,
+    private val reassignTaskUseCase: com.predicta.app.feature_tasks.domain.usecase.ReassignTaskUseCase,
 ) : ViewModel() {
 
     private val taskId: String = checkNotNull(savedStateHandle["taskId"])
@@ -29,7 +30,7 @@ class TaskReassignmentViewModel(
 
     init {
         viewModelScope.launch {
-            demoStateManager.demoState.collect { demo ->
+            getDemoStateUseCase().collect { demo ->
                 val task = demo.pavelTasks.find { it.id == taskId }
                 if (task != null) {
                     val canReassign = task.status == TaskStatus.IN_PROGRESS || task.status == TaskStatus.TODO
@@ -56,7 +57,7 @@ class TaskReassignmentViewModel(
     fun onEvent(event: TaskReassignmentEvent) {
         when (event) {
             is TaskReassignmentEvent.ConfirmReassignment -> {
-                demoStateManager.reassignTask(taskId)
+                reassignTaskUseCase(taskId)
                 _state.update { it.copy(isReassigned = true) }
             }
             is TaskReassignmentEvent.CompleteReassignment -> {

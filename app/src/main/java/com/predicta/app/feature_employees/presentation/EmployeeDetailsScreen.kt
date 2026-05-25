@@ -1,4 +1,4 @@
-﻿package com.predicta.app.feature_employees.presentation
+package com.predicta.app.feature_employees.presentation
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
@@ -50,11 +50,14 @@ import com.predicta.app.data.demo.DemoData
 import com.predicta.app.ui.components.AnimatedNumberText
 import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.modifier.pressScale
-import com.predicta.app.ui.theme.ErrorRed
+import com.predicta.app.ui.theme.BackgroundCritical
+import com.predicta.app.ui.theme.BackgroundSuccess
+import com.predicta.app.ui.theme.BurnoutLevel
 import com.predicta.app.ui.theme.PredictaShapes
 import com.predicta.app.ui.theme.PrimaryBlue
 import com.predicta.app.ui.theme.SecondarySlate
-import com.predicta.app.ui.theme.SuccessGreen
+import com.predicta.app.ui.theme.SemanticCritical
+import com.predicta.app.ui.theme.SemanticSuccess
 import com.predicta.app.ui.theme.SurfaceWhite
 import com.predicta.app.ui.theme.TextSecondary
 import org.koin.androidx.compose.koinViewModel
@@ -176,7 +179,9 @@ private fun VelocityCard(
     modifier: Modifier = Modifier,
 ) {
     val progress = if (total > 0) done.toFloat() / total else 0f
-    val barColor = if (isHealthy) SuccessGreen else ErrorRed
+    val burnoutLevel = if (isHealthy) BurnoutLevel.LOW else BurnoutLevel.HIGH
+    val barColor = burnoutLevel.getStrokeColor()
+    val cardBgColor = burnoutLevel.getBackgroundColor()
     val interactionSource = remember { MutableInteractionSource() }
 
     // Animate progress
@@ -190,12 +195,14 @@ private fun VelocityCard(
 
     Card(
         shape = PredictaShapes.medium,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
         modifier = modifier
             .fillMaxWidth()
             .liquidGlass(
                 shape = PredictaShapes.medium,
                 blurRadius = 0.dp,
+                tintColor = barColor,
+                tintAlpha = 0.08f,
                 isActive = !isHealthy,
             )
             .pressScale(interactionSource)
@@ -219,16 +226,13 @@ private fun VelocityCard(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(CircleShape)
-                        .background(
-                            if (isHealthy) SuccessGreen.copy(alpha = 0.12f)
-                            else ErrorRed.copy(alpha = 0.12f),
-                        ),
+                        .background(barColor.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Person,
                         contentDescription = null,
-                        tint = if (isHealthy) SuccessGreen else ErrorRed,
+                        tint = barColor,
                         modifier = Modifier.size(24.dp),
                     )
                 }
@@ -344,7 +348,7 @@ private fun SummaryCard(
             SummaryRow(
                 label = "Статус проекта",
                 value = if (demo.isProjectDelayed) "Задержка ${demo.delayDays} дн." else "В срок",
-                valueColor = if (demo.isProjectDelayed) ErrorRed else SuccessGreen,
+                valueColor = if (demo.isProjectDelayed) SemanticCritical else SemanticSuccess,
             )
         }
     }

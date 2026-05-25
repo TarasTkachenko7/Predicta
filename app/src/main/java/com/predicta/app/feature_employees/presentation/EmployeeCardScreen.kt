@@ -3,10 +3,15 @@ package com.predicta.app.feature_employees.presentation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +36,7 @@ import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -81,14 +87,19 @@ import com.predicta.app.data.demo.DemoTask
 import com.predicta.app.data.demo.TaskStatus
 import com.predicta.app.ui.components.AnimatedNumberText
 import com.predicta.app.ui.modifier.liquidGlass
-import com.predicta.app.ui.theme.ErrorRed
+import com.predicta.app.ui.modifier.pressScale
+import com.predicta.app.ui.theme.BackgroundCritical
+import com.predicta.app.ui.theme.BackgroundSuccess
+import com.predicta.app.ui.theme.BackgroundWarning
+import com.predicta.app.ui.theme.BurnoutLevel
 import com.predicta.app.ui.theme.PredictaShapes
 import com.predicta.app.ui.theme.PrimaryBlue
 import com.predicta.app.ui.theme.SecondarySlate
-import com.predicta.app.ui.theme.SuccessGreen
+import com.predicta.app.ui.theme.SemanticCritical
+import com.predicta.app.ui.theme.SemanticSuccess
+import com.predicta.app.ui.theme.SemanticWarning
 import com.predicta.app.ui.theme.SurfaceWhite
 import com.predicta.app.ui.theme.TextSecondary
-import com.predicta.app.ui.theme.WarningAmber
 import kotlinx.coroutines.delay
 
 import org.koin.androidx.compose.koinViewModel
@@ -110,6 +121,8 @@ fun EmployeeCardScreen(
             state = state,
             onBack = onNavigateBack,
             onReassign = onNavigateToReassign,
+            onToggleDeepWork = viewModel::onToggleDeepWork,
+            onToggleChartMode = viewModel::onToggleChartMode,
             modifier = modifier,
         )
     } else {
@@ -131,6 +144,8 @@ private fun PavelCardContent(
     state: EmployeeCardState,
     onBack: () -> Unit,
     onReassign: (String) -> Unit,
+    onToggleDeepWork: () -> Unit,
+    onToggleChartMode: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // Simulate AI "typing" effect
@@ -188,11 +203,156 @@ private fun PavelCardContent(
             )
         }
 
+        // ── Risk Factors ──────────────────────────────────────────────────
+        if (state.riskFactors.isNotEmpty()) {
+            item {
+                Card(
+                    shape = PredictaShapes.medium,
+                    colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .liquidGlass(
+                            shape = PredictaShapes.medium,
+                            blurRadius = 0.dp,
+                            tintColor = SemanticWarning,
+                            tintAlpha = 0.08f,
+                            isActive = true,
+                        )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Warning,
+                                contentDescription = null,
+                                tint = SemanticWarning,
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Text(
+                                text = "Факторы риска",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        state.riskFactors.forEach { factor ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.padding(bottom = 6.dp),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(SemanticWarning),
+                                )
+                                Text(
+                                    text = factor,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Deep Work Shield toggle ──────────────────────────────────────
+        item {
+            val interactionSource = remember { MutableInteractionSource() }
+            Card(
+                shape = PredictaShapes.medium,
+                colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pressScale(interactionSource)
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = onToggleDeepWork,
+                    )
+                    .liquidGlass(
+                        shape = PredictaShapes.medium,
+                        blurRadius = 0.dp,
+                        tintColor = if (state.isDeepWorkActive) SemanticSuccess else MaterialTheme.colorScheme.primary,
+                        tintAlpha = if (state.isDeepWorkActive) 0.08f else 0.04f,
+                        isActive = state.isDeepWorkActive,
+                    )
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = if (state.isDeepWorkActive) Icons.Filled.CheckCircle else Icons.Outlined.AutoAwesome,
+                            contentDescription = null,
+                            tint = if (state.isDeepWorkActive) SemanticSuccess else MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp),
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = if (state.isDeepWorkActive) "Защита фокуса включена" else "Включить защиту фокуса (Deep Work)",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (state.isDeepWorkActive) SemanticSuccess else MaterialTheme.colorScheme.primary,
+                        )
+                    }
+
+                    AnimatedVisibility(
+                        visible = state.isDeepWorkActive,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(SemanticSuccess.copy(alpha = 0.1f))
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.CheckCircle,
+                                contentDescription = null,
+                                tint = SemanticSuccess,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Text(
+                                text = "Calendar: 2 некритичные встречи перенесены. Slack: Уведомления заглушены.",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = SemanticSuccess,
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         // ── Forecast chart (plan vs fact) ───────────────────────────────
         item {
             ForecastCard(
                 predictedDays = state.predictedDays,
                 deadlineDays = state.deadlineDays,
+                showRecoveryForecast = state.showRecoveryForecast,
+                recoveryForecastData = state.recoveryForecastData,
+                onToggleChartMode = onToggleChartMode,
             )
         }
 
@@ -286,14 +446,14 @@ private fun OlegCardContent(
             Card(
                 shape = PredictaShapes.medium,
                 colors = CardDefaults.cardColors(
-                    containerColor = SuccessGreen.copy(alpha = 0.08f),
+                    containerColor = SurfaceWhite,
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .liquidGlass(
                         shape = PredictaShapes.medium,
                         blurRadius = 0.dp,
-                        tintColor = SuccessGreen,
+                        tintColor = SemanticSuccess,
                         tintAlpha = 0.08f,
                     ),
             ) {
@@ -307,7 +467,7 @@ private fun OlegCardContent(
                     Icon(
                         imageVector = Icons.Filled.CheckCircle,
                         contentDescription = null,
-                        tint = SuccessGreen,
+                        tint = SemanticSuccess,
                         modifier = Modifier.size(28.dp),
                     )
                     Column {
@@ -315,7 +475,7 @@ private fun OlegCardContent(
                             text = "Оптимальная загрузка",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = SuccessGreen,
+                            color = SemanticSuccess,
                         )
                         Text(
                             text = if (assignedTasks.isEmpty()) {
@@ -368,16 +528,20 @@ private fun EmployeeHeaderCard(
     isHealthy: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val statusColor = if (isHealthy) SuccessGreen else ErrorRed
+    val burnoutLevel = if (isHealthy) BurnoutLevel.LOW else BurnoutLevel.HIGH
+    val statusColor = burnoutLevel.getStrokeColor()
+    val cardBgColor = burnoutLevel.getBackgroundColor()
 
     Card(
         shape = PredictaShapes.medium,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
         modifier = modifier
             .fillMaxWidth()
             .liquidGlass(
                 shape = PredictaShapes.medium,
                 blurRadius = 0.dp,
+                tintColor = statusColor,
+                tintAlpha = 0.08f,
             ),
     ) {
         Row(
@@ -449,6 +613,8 @@ private fun AssignedTaskCard(
             .liquidGlass(
                 shape = PredictaShapes.medium,
                 blurRadius = 0.dp,
+                tintColor = SemanticWarning,
+                tintAlpha = 0.08f,
                 isActive = true,
             ),
     ) {
@@ -462,7 +628,7 @@ private fun AssignedTaskCard(
                 modifier = Modifier
                     .size(10.dp)
                     .clip(CircleShape)
-                    .background(WarningAmber),
+                    .background(SemanticWarning),
             )
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -477,7 +643,7 @@ private fun AssignedTaskCard(
                 Text(
                     text = "Назначена Олегу · к выполнению",
                     style = MaterialTheme.typography.labelSmall,
-                    color = WarningAmber,
+                    color = SemanticWarning,
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
@@ -489,6 +655,9 @@ private fun AssignedTaskCard(
 private fun ForecastCard(
     predictedDays: Int,
     deadlineDays: Int,
+    showRecoveryForecast: Boolean,
+    recoveryForecastData: List<Float>,
+    onToggleChartMode: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
@@ -512,13 +681,17 @@ private fun ForecastCard(
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(showRecoveryForecast, recoveryForecastData) {
         modelProducer.runTransaction {
             lineSeries {
-                // Plan line (ideal pace)
-                series(0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0)
-                // Fact line (Pavel's actual pace — slow)
-                series(0.0, 0.2, 0.3, 0.5, 0.6, 0.7, 0.9, 1.0, 1.1)
+                if (showRecoveryForecast) {
+                    series(recoveryForecastData)
+                } else {
+                    // Plan line (ideal pace)
+                    series(0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0)
+                    // Fact line (Pavel's actual pace — slow)
+                    series(0.0, 0.2, 0.3, 0.5, 0.6, 0.7, 0.9, 1.0, 1.1)
+                }
             }
         }
     }
@@ -545,7 +718,7 @@ private fun ForecastCard(
                 Icon(
                     imageVector = Icons.Outlined.Schedule,
                     contentDescription = null,
-                    tint = ErrorRed,
+                    tint = SemanticCritical,
                     modifier = Modifier.size(20.dp),
                 )
                 Text(
@@ -559,40 +732,64 @@ private fun ForecastCard(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = "С текущим темпом Павел закончит свои задачи через " +
-                    "$predictedDays дней вместо $deadlineDays.",
+                text = if (showRecoveryForecast) {
+                    "При включенной защите фокуса риск выгорания плавно снижается."
+                } else {
+                    "С текущим темпом Павел закончит свои задачи через $predictedDays дней вместо $deadlineDays."
+                },
                 style = MaterialTheme.typography.bodySmall,
-                color = ErrorRed,
+                color = if (showRecoveryForecast) SemanticSuccess else SemanticCritical,
                 fontWeight = FontWeight.Medium,
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Legend
+            // Legend and Toggle Button
             Row(
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                LegendItem(color = MaterialTheme.colorScheme.primary, label = "План")
-                LegendItem(color = ErrorRed, label = "Факт")
+                if (showRecoveryForecast) {
+                    LegendItem(color = SemanticSuccess, label = "Прогноз")
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                        LegendItem(color = MaterialTheme.colorScheme.primary, label = "План")
+                        LegendItem(color = SemanticCritical, label = "Факт")
+                    }
+                }
+
+                OutlinedButton(
+                    onClick = onToggleChartMode,
+                    shape = PredictaShapes.medium,
+                ) {
+                    Text(
+                        text = if (showRecoveryForecast) "История нагрузки" else "Прогноз восстановления",
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            val planLine = LineCartesianLayer.rememberLine(
+                fill = remember(planColor) { LineCartesianLayer.LineFill.single(fill(planColor)) },
+            )
+            val factLine = LineCartesianLayer.rememberLine(
+                fill = remember { LineCartesianLayer.LineFill.single(fill(SemanticCritical)) },
+            )
+            val recoveryLine = LineCartesianLayer.rememberLine(
+                fill = remember { LineCartesianLayer.LineFill.single(fill(SemanticSuccess)) },
+            )
+
             CartesianChartHost(
                 chart = rememberCartesianChart(
                     rememberLineCartesianLayer(
-                        lineProvider = LineCartesianLayer.LineProvider.series(
-                            LineCartesianLayer.rememberLine(
-                                fill = remember(planColor) {
-                                    LineCartesianLayer.LineFill.single(fill(planColor))
-                                },
-                            ),
-                            LineCartesianLayer.rememberLine(
-                                fill = remember {
-                                    LineCartesianLayer.LineFill.single(fill(ErrorRed))
-                                },
-                            ),
-                        ),
+                        lineProvider = if (showRecoveryForecast) {
+                            LineCartesianLayer.LineProvider.series(recoveryLine)
+                        } else {
+                            LineCartesianLayer.LineProvider.series(planLine, factLine)
+                        }
                     ),
                     startAxis = VerticalAxis.rememberStart(
                         line = axisLine,
@@ -814,8 +1011,8 @@ private fun TaskCard(
     modifier: Modifier = Modifier,
 ) {
     val statusColor = when (task.status) {
-        TaskStatus.DONE -> SuccessGreen
-        TaskStatus.IN_PROGRESS -> WarningAmber
+        TaskStatus.DONE -> SemanticSuccess
+        TaskStatus.IN_PROGRESS -> SemanticWarning
         TaskStatus.TODO -> MaterialTheme.colorScheme.onSurfaceVariant
         TaskStatus.REASSIGNED -> MaterialTheme.colorScheme.primary
     }

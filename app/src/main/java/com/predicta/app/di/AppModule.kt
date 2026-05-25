@@ -31,23 +31,37 @@ val appModule = module {
     // ── App Runtime ─────────────────────────────────────────────────────
     single { NetworkMonitor(androidContext()) }
     single { UserSessionManager(androidContext()) }
+    viewModel { com.predicta.app.ui.AppViewModel(networkMonitor = get(), sessionManager = get()) }
 
     // ── Auth Feature ────────────────────────────────────────────────────
     single<AuthRepository> { AuthRepositoryImpl() }
-    viewModel { AuthViewModel(authRepository = get(), sessionManager = get()) }
+    factory { com.predicta.app.feature_auth.domain.usecase.LoginUseCase(get()) }
+    factory { com.predicta.app.feature_auth.domain.usecase.RegisterUseCase(get()) }
+    factory { com.predicta.app.feature_auth.domain.usecase.ResetPasswordUseCase(get()) }
+    viewModel { 
+        AuthViewModel(
+            loginUseCase = get(),
+            registerUseCase = get(),
+            resetPasswordUseCase = get(),
+            sessionManager = get()
+        ) 
+    }
 
     // ── App Settings ────────────────────────────────────────────────────
     single { AppSettingsRepository(androidContext()) }
 
     // ── feature_dashboard ───────────────────────────────────────────────
-    viewModel { DashboardViewModel(demoStateManager = get()) }
+    factory { com.predicta.app.feature_dashboard.domain.usecase.GetDemoStateUseCase(get()) }
+    factory { com.predicta.app.feature_employees.domain.usecase.ToggleDeepWorkUseCase(demoStateManager = get()) }
+    viewModel { DashboardViewModel(getDemoStateUseCase = get()) }
 
     // ── feature_employees (Team Velocity + Employee Card) ───────────────
-    viewModel { EmployeeViewModel(demoStateManager = get()) }
-    viewModel { EmployeeCardViewModel(savedStateHandle = get(), demoStateManager = get()) }
+    viewModel { EmployeeViewModel(getDemoStateUseCase = get()) }
+    viewModel { EmployeeCardViewModel(savedStateHandle = get(), getDemoStateUseCase = get(), toggleDeepWorkUseCase = get()) }
 
     // ── feature_tasks ───────────────────────────────────────────────────
-    viewModel { TaskReassignmentViewModel(savedStateHandle = get(), demoStateManager = get()) }
+    factory { com.predicta.app.feature_tasks.domain.usecase.ReassignTaskUseCase(get()) }
+    viewModel { TaskReassignmentViewModel(savedStateHandle = get(), getDemoStateUseCase = get(), reassignTaskUseCase = get()) }
 
     // ── feature_settings ────────────────────────────────────────────────
     viewModel { SettingsViewModel(settingsRepository = get(), sessionManager = get()) }

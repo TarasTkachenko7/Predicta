@@ -13,7 +13,8 @@ import kotlinx.coroutines.launch
 
 class EmployeeCardViewModel(
     savedStateHandle: SavedStateHandle,
-    private val demoStateManager: DemoStateManager,
+    private val getDemoStateUseCase: com.predicta.app.feature_dashboard.domain.usecase.GetDemoStateUseCase,
+    private val toggleDeepWorkUseCase: com.predicta.app.feature_employees.domain.usecase.ToggleDeepWorkUseCase,
 ) : ViewModel() {
 
     private val employeeId: String = checkNotNull(savedStateHandle["employeeId"])
@@ -23,7 +24,7 @@ class EmployeeCardViewModel(
 
     init {
         viewModelScope.launch {
-            demoStateManager.demoState.collect { demo ->
+            getDemoStateUseCase().collect { demo ->
                 val isPavel = employeeId == DemoStateManager.PAVEL_ID
                 
                 if (isPavel) {
@@ -40,7 +41,9 @@ class EmployeeCardViewModel(
                             predictedDays = demo.pavelPredictedDays,
                             deadlineDays = demo.pavelDeadlineDays,
                             aiInsight = demo.pavelAiInsight,
+                            riskFactors = demo.pavelRiskFactors,
                             tasks = demo.pavelTasks,
+                            isDeepWorkActive = demo.isDeepWorkActive,
                         )
                     }
                 } else {
@@ -58,10 +61,30 @@ class EmployeeCardViewModel(
                             total = demo.olegTotal,
                             isHealthy = true,
                             tasks = assignedTasks,
+                            isDeepWorkActive = demo.isDeepWorkActive,
                         )
                     }
                 }
             }
+        }
+    }
+
+    fun onToggleDeepWork() {
+        toggleDeepWorkUseCase()
+    }
+
+    fun onToggleChartMode() {
+        _state.update { current ->
+            val newShowRecovery = !current.showRecoveryForecast
+            val newForecastData = if (newShowRecovery) {
+                listOf(0.85f, 0.70f, 0.55f, 0.40f, 0.30f, 0.25f, 0.20f)
+            } else {
+                emptyList()
+            }
+            current.copy(
+                showRecoveryForecast = newShowRecovery,
+                recoveryForecastData = newForecastData,
+            )
         }
     }
 }

@@ -6,6 +6,7 @@ sealed interface AuthEvent {
     data class NameChanged(val value: String) : AuthEvent
     data object FillDemoCredentials : AuthEvent
     data object LoginSubmit : AuthEvent
+    data object LoginDemoSubmit : AuthEvent
     data object RegisterSubmit : AuthEvent
     data object ResetSubmit : AuthEvent
     data object ResetSuccessState : AuthEvent

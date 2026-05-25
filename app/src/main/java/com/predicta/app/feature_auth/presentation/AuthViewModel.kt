@@ -13,7 +13,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class AuthViewModel(
-    private val authRepository: AuthRepository,
+    private val loginUseCase: com.predicta.app.feature_auth.domain.usecase.LoginUseCase,
+    private val registerUseCase: com.predicta.app.feature_auth.domain.usecase.RegisterUseCase,
+    private val resetPasswordUseCase: com.predicta.app.feature_auth.domain.usecase.ResetPasswordUseCase,
     private val sessionManager: UserSessionManager,
 ) : ViewModel() {
 
@@ -41,6 +43,18 @@ class AuthViewModel(
                         globalError = null,
                     )
                 }
+            }
+            AuthEvent.LoginDemoSubmit -> {
+                _state.update {
+                    it.copy(
+                        email = "demo@predicta.ai",
+                        password = "demo123",
+                        emailError = null,
+                        passwordError = null,
+                        globalError = null,
+                    )
+                }
+                login()
             }
             is AuthEvent.RecoveryCodeChanged -> {
                 _state.update { it.copy(recoveryCode = event.value, recoveryCodeError = null, globalError = null) }
@@ -104,7 +118,7 @@ class AuthViewModel(
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, globalError = null) }
-            val result = authRepository.login(_state.value.email, _state.value.password)
+            val result = loginUseCase(_state.value.email, _state.value.password)
             result.onSuccess { user ->
                 sessionManager.startSession(user)
                 _state.update { it.copy(isLoading = false, isSuccess = true) }
@@ -132,7 +146,7 @@ class AuthViewModel(
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, globalError = null) }
-            val result = authRepository.register(_state.value.email, _state.value.password, _state.value.name)
+            val result = registerUseCase(_state.value.email, _state.value.password, _state.value.name)
             result.onSuccess { user ->
                 sessionManager.startSession(user)
                 _state.update { it.copy(isLoading = false, isSuccess = true) }
@@ -151,7 +165,7 @@ class AuthViewModel(
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, globalError = null) }
-            val result = authRepository.resetPassword(_state.value.email)
+            val result = resetPasswordUseCase(_state.value.email)
             result.onSuccess {
                 _state.update { it.copy(isLoading = false, resetStep = ResetStep.CODE_VERIFICATION) }
             }.onFailure { e ->

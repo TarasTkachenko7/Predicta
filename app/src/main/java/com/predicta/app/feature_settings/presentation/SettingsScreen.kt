@@ -57,7 +57,7 @@ import com.predicta.app.R
 import com.predicta.app.feature_settings.domain.model.ThemeMode
 import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.theme.PredictaShapes
-import com.predicta.app.ui.theme.SuccessGreen
+import com.predicta.app.ui.theme.SemanticSuccess
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -75,10 +75,6 @@ fun SettingsScreen(
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item {
-            SettingsHeader()
-        }
-
         item {
             ProfileCard(
                 userName = state.userName,
@@ -110,39 +106,6 @@ fun SettingsScreen(
     }
 }
 
-@Composable
-private fun SettingsHeader(
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.logo),
-            contentDescription = "Predicta",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(12.dp)),
-        )
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "Настройки",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Text(
-                text = "Профиль, оформление и состояние приложения",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
 
 @Composable
 private fun ProfileCard(
@@ -386,13 +349,13 @@ private fun StatusRow(
             modifier = Modifier
                 .size(38.dp)
                 .clip(CircleShape)
-                .background(SuccessGreen.copy(alpha = 0.12f)),
+                .background(SemanticSuccess.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = SuccessGreen,
+                tint = SemanticSuccess,
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -413,7 +376,7 @@ private fun StatusRow(
                     text = value,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = SuccessGreen,
+                    color = SemanticSuccess,
                 )
             }
             Text(

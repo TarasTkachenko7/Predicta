@@ -216,8 +216,7 @@ fun LoginScreen(
 
                     OutlinedButton(
                         onClick = {
-                            viewModel.onEvent(AuthEvent.FillDemoCredentials)
-                            viewModel.onEvent(AuthEvent.LoginSubmit)
+                            viewModel.onEvent(AuthEvent.LoginDemoSubmit)
                         },
                         modifier = Modifier
                             .fillMaxWidth()

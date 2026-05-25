@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
  * Observes [DemoStateManager] for live data about Oleg and Pavel.
  */
 class EmployeeViewModel(
-    private val demoStateManager: DemoStateManager,
+    private val getDemoStateUseCase: com.predicta.app.feature_dashboard.domain.usecase.GetDemoStateUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(EmployeeState())
@@ -32,7 +32,7 @@ class EmployeeViewModel(
 
     fun onEvent(event: EmployeeEvent) {
         when (event) {
-            is EmployeeEvent.Refresh -> applyDemoState(demoStateManager.demoState.value)
+            is EmployeeEvent.Refresh -> applyDemoState(getDemoStateUseCase().value)
             is EmployeeEvent.SelectEmployee -> {
                 viewModelScope.launch {
                     _navigation.emit(
@@ -45,7 +45,7 @@ class EmployeeViewModel(
 
     private fun observeDemoState() {
         viewModelScope.launch {
-            demoStateManager.demoState.collect { demo ->
+            getDemoStateUseCase().collect { demo ->
                 applyDemoState(demo)
             }
         }

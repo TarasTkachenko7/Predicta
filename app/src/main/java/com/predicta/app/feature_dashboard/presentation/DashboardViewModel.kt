@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
  * a single [StateFlow]<[DashboardState]>.
  */
 class DashboardViewModel(
-    private val demoStateManager: DemoStateManager,
+    private val getDemoStateUseCase: com.predicta.app.feature_dashboard.domain.usecase.GetDemoStateUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DashboardState())
@@ -37,8 +37,9 @@ class DashboardViewModel(
 
     fun onEvent(event: DashboardEvent) {
         when (event) {
-            is DashboardEvent.Refresh -> applyDemoState(demoStateManager.demoState.value)
+            is DashboardEvent.Refresh -> applyDemoState(getDemoStateUseCase().value)
             is DashboardEvent.DismissAlert -> dismissAlert(event.alertId)
+            is DashboardEvent.AlertClicked -> handleAlertClicked(event.targetId)
             is DashboardEvent.NavigateToTeamVelocity -> {
                 viewModelScope.launch {
                     _navigation.emit(DashboardNavAction.GoToTeamVelocity)
@@ -49,7 +50,7 @@ class DashboardViewModel(
 
     private fun observeDemoState() {
         viewModelScope.launch {
-            demoStateManager.demoState.collect { demo ->
+            getDemoStateUseCase().collect { demo ->
                 applyDemoState(demo)
             }
         }
@@ -108,12 +109,14 @@ class DashboardViewModel(
                     message = "${demo.sprintName}. Риск срыва дедлайна " +
                         "${demo.delayTrack} на ${demo.delayDays} дня.",
                     severity = "high",
+                    triggerSource = "GitHub: 3 ночных коммита",
                 ),
                 GlobalAlert(
                     id = "alert_pavel_burnout",
                     message = "Критический риск выгорания: ${demo.pavelName} " +
                         "закрыл только ${demo.pavelDone} из ${demo.pavelTotal} задач.",
                     severity = "high",
+                    triggerSource = "Calendar: 6 часов созвонов",
                 ),
             )
         } else {
@@ -136,8 +139,15 @@ class DashboardViewModel(
             )
         }
     }
+
+    private fun handleAlertClicked(alertId: String) {
+        viewModelScope.launch {
+            _navigation.emit(DashboardNavAction.ResolveAlert(alertId))
+        }
+    }
 }
 
 sealed interface DashboardNavAction {
     data object GoToTeamVelocity : DashboardNavAction
+    data class ResolveAlert(val targetId: String) : DashboardNavAction
 }

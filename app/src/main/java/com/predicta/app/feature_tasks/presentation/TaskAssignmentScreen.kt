@@ -54,11 +54,14 @@ import com.predicta.app.data.demo.DemoStateManager
 import com.predicta.app.data.demo.DemoTask
 import com.predicta.app.data.demo.TaskStatus
 import com.predicta.app.ui.modifier.liquidGlass
-import com.predicta.app.ui.theme.ErrorRed
+import com.predicta.app.ui.theme.BackgroundCritical
+import com.predicta.app.ui.theme.BackgroundSuccess
 import com.predicta.app.ui.theme.PredictaShapes
 import com.predicta.app.ui.theme.PrimaryBlue
 import com.predicta.app.ui.theme.SecondarySlate
-import com.predicta.app.ui.theme.SuccessGreen
+import com.predicta.app.ui.theme.SemanticCritical
+import com.predicta.app.ui.theme.SemanticSuccess
+import com.predicta.app.ui.theme.SemanticWarning
 import com.predicta.app.ui.theme.SurfaceWhite
 import org.koin.androidx.compose.koinViewModel
 
@@ -254,13 +257,13 @@ private fun TransferVisualization(
                 modifier = Modifier
                     .size(60.dp)
                     .clip(CircleShape)
-                    .background(ErrorRed.copy(alpha = 0.12f)),
+                    .background(BackgroundCritical),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Person,
                     contentDescription = null,
-                    tint = ErrorRed,
+                    tint = SemanticCritical,
                     modifier = Modifier.size(32.dp),
                 )
             }
@@ -268,7 +271,7 @@ private fun TransferVisualization(
                 text = fromName,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = ErrorRed,
+                color = SemanticCritical,
                 modifier = Modifier.padding(top = 8.dp),
             )
             Text(
@@ -292,13 +295,13 @@ private fun TransferVisualization(
                 modifier = Modifier
                     .size(60.dp)
                     .clip(CircleShape)
-                    .background(SuccessGreen.copy(alpha = 0.12f)),
+                    .background(BackgroundSuccess),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Person,
                     contentDescription = null,
-                    tint = SuccessGreen,
+                    tint = SemanticSuccess,
                     modifier = Modifier.size(32.dp),
                 )
             }
@@ -306,7 +309,7 @@ private fun TransferVisualization(
                 text = toName,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = SuccessGreen,
+                color = SemanticSuccess,
                 modifier = Modifier.padding(top = 8.dp),
             )
             Text(
@@ -333,15 +336,15 @@ private fun RecommendedAssigneeCard(
     Card(
         shape = PredictaShapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = SuccessGreen.copy(alpha = 0.06f),
+            containerColor = SurfaceWhite,
         ),
         modifier = modifier
             .fillMaxWidth()
             .liquidGlass(
                 shape = PredictaShapes.medium,
                 blurRadius = 0.dp,
-                tintColor = SuccessGreen,
-                tintAlpha = 0.07f,
+                tintColor = SemanticSuccess,
+                tintAlpha = 0.08f,
                 isActive = true,
             ),
     ) {
@@ -357,14 +360,14 @@ private fun RecommendedAssigneeCard(
                 Icon(
                     imageVector = Icons.Outlined.Star,
                     contentDescription = null,
-                    tint = SuccessGreen,
+                    tint = SemanticSuccess,
                     modifier = Modifier.size(20.dp),
                 )
                 Text(
                     text = "Рекомендуемый исполнитель",
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold,
-                    color = SuccessGreen,
+                    color = SemanticSuccess,
                 )
             }
 
@@ -378,13 +381,13 @@ private fun RecommendedAssigneeCard(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
-                        .background(SuccessGreen.copy(alpha = 0.12f)),
+                        .background(SemanticSuccess.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Person,
                         contentDescription = null,
-                        tint = SuccessGreen,
+                        tint = SemanticSuccess,
                         modifier = Modifier.size(28.dp),
                     )
                 }
@@ -410,7 +413,7 @@ private fun RecommendedAssigneeCard(
                         text = "$done / $total",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color = SuccessGreen,
+                        color = SemanticSuccess,
                     )
                     Text(
                         text = "задач закрыто",
@@ -443,8 +446,8 @@ private fun SuccessCard(
                 .liquidGlass(
                     shape = PredictaShapes.large,
                     blurRadius = 0.dp,
-                    tintColor = SuccessGreen,
-                    tintAlpha = 0.06f,
+                    tintColor = SemanticSuccess,
+                    tintAlpha = 0.08f,
                     isActive = true,
                 ),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -454,7 +457,7 @@ private fun SuccessCard(
                     .fillMaxWidth()
                     .background(
                         brush = Brush.linearGradient(
-                            listOf(Color(0xFF2E7D32), Color(0xFF1B5E20)),
+                            listOf(SemanticSuccess, SemanticSuccess.copy(alpha = 0.85f)),
                         ),
                     )
                     .padding(28.dp),
@@ -495,7 +498,7 @@ private fun SuccessCard(
                         onClick = onGoToDashboard,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color.White,
-                            contentColor = Color(0xFF1B5E20),
+                            contentColor = SemanticSuccess,
                         ),
                         shape = PredictaShapes.medium,
                     ) {

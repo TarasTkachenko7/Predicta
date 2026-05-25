@@ -68,6 +68,12 @@ class DemoStateManager {
         }
     }
 
+    fun toggleDeepWork() {
+        _demoState.update { current ->
+            current.copy(isDeepWorkActive = !current.isDeepWorkActive)
+        }
+    }
+
     private fun calculateCompletion(
         olegDone: Int,
         olegTotal: Int,
@@ -157,8 +163,10 @@ class DemoStateManager {
 
                 pavelPredictedDays = 8,
                 pavelDeadlineDays = 3,
+                pavelRiskFactors = listOf("+12ч на выходных (GitHub)", "8 встреч подряд (Calendar)"),
 
                 hasBeenReassigned = false,
+                isDeepWorkActive = false,
             )
         }
     }
@@ -199,9 +207,13 @@ data class DemoData(
     val pavelAiInsight: String,
     val pavelPredictedDays: Int,
     val pavelDeadlineDays: Int,
+    val pavelRiskFactors: List<String>,
 
     // Global flag
     val hasBeenReassigned: Boolean,
+
+    // Employee status
+    val isDeepWorkActive: Boolean,
 )
 
 data class DemoTask(

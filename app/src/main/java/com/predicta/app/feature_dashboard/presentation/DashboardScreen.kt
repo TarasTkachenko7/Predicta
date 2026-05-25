@@ -1,4 +1,4 @@
-﻿package com.predicta.app.feature_dashboard.presentation
+package com.predicta.app.feature_dashboard.presentation
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -25,17 +25,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -76,19 +72,23 @@ import com.predicta.app.feature_dashboard.domain.model.GlobalAlert
 import com.predicta.app.feature_dashboard.domain.model.TeamPace
 import com.predicta.app.ui.components.AnimatedNumberText
 import com.predicta.app.ui.modifier.liquidGlass
-import com.predicta.app.ui.theme.ErrorRed
+import com.predicta.app.ui.theme.BackgroundCritical
+import com.predicta.app.ui.theme.BackgroundSuccess
+import com.predicta.app.ui.theme.BackgroundWarning
 import com.predicta.app.ui.theme.PredictaShapes
 import com.predicta.app.ui.theme.PrimaryBlue
 import com.predicta.app.ui.theme.SecondarySlate
-import com.predicta.app.ui.theme.SuccessGreen
+import com.predicta.app.ui.theme.SemanticCritical
+import com.predicta.app.ui.theme.SemanticSuccess
+import com.predicta.app.ui.theme.SemanticWarning
 import com.predicta.app.ui.theme.SurfaceWhite
 import com.predicta.app.ui.theme.TextSecondary
-import com.predicta.app.ui.theme.WarningAmber
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun DashboardScreen(
     onNavigateToTeamVelocity: () -> Unit,
+    onResolveAlert: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = koinViewModel(),
 ) {
@@ -98,6 +98,7 @@ fun DashboardScreen(
         viewModel.navigation.collect { action ->
             when (action) {
                 DashboardNavAction.GoToTeamVelocity -> onNavigateToTeamVelocity()
+                is DashboardNavAction.ResolveAlert -> onResolveAlert(action.targetId)
             }
         }
     }
@@ -174,7 +175,7 @@ private fun DashboardContent(
         if (state.alerts.isNotEmpty()) {
             item {
                 Text(
-                    text = "Предупреждения Predicta AI",
+                    text = "Предупреждения",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold,
@@ -188,39 +189,10 @@ private fun DashboardContent(
             ) { alert ->
                 AlertCard(
                     alert = alert,
-                    onDismiss = { onEvent(DashboardEvent.DismissAlert(alert.id)) },
+                    onResolve = { onEvent(DashboardEvent.AlertClicked(alert.id)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .animateContentSize(),
-                )
-            }
-        }
-
-        // ── Section: Action Button ──────────────────────────────────────
-        item {
-            Button(
-                onClick = { onEvent(DashboardEvent.NavigateToTeamVelocity) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = PredictaShapes.medium,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                ),
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 4.dp,
-                ),
-            ) {
-                Text(
-                    text = "Посмотреть темп команды",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
                 )
             }
         }
@@ -246,11 +218,10 @@ private fun SprintStatusCard(
     hasBeenReassigned: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val gradientColors = if (isDelayed) {
-        listOf(Color(0xFFD32F2F), Color(0xFFB71C1C))
-    } else {
-        listOf(Color(0xFF2E7D32), Color(0xFF1B5E20))
-    }
+    val statusColor = if (isDelayed) SemanticCritical else SemanticSuccess
+    val statusBgColor = if (isDelayed) BackgroundCritical else BackgroundSuccess
+    val textColor = MaterialTheme.colorScheme.primary
+    val subTextColor = MaterialTheme.colorScheme.onSurfaceVariant
 
     // Animated completion progress
     var targetProgress by remember { mutableFloatStateOf(0f) }
@@ -262,115 +233,110 @@ private fun SprintStatusCard(
     )
 
     Card(
-        shape = PredictaShapes.large,
-        modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        shape = PredictaShapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = modifier
+            .fillMaxWidth()
+            .liquidGlass(
+                shape = PredictaShapes.medium,
+                blurRadius = 0.dp,
+                liquidIntensity = 0.9f,
+            ),
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    brush = Brush.linearGradient(gradientColors),
-                )
                 .padding(24.dp),
         ) {
+            // Sprint label
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    text = sprintName,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = textColor,
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Status message
+            Text(
+                text = if (isDelayed) {
+                    "Риск срыва дедлайна $delayTrack на $delayDays дня"
+                } else {
+                    "Новый прогноз проекта: Сдача вовремя"
+                },
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = if (isDelayed) statusColor else textColor,
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Progress bar
             Column {
-                // Sprint label
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Icon(
-                        imageVector = if (isDelayed) Icons.Outlined.Warning
-                        else Icons.Filled.CheckCircle,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(28.dp),
+                    AnimatedNumberText(
+                        value = (animatedProgress * 100).toInt(),
+                        prefix = "Выполнено: ",
+                        suffix = "%",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = subTextColor,
                     )
                     Text(
-                        text = sprintName,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        text = "День $elapsedDays из $totalDays",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = subTextColor,
                     )
                 }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Status message
-                Text(
-                    text = if (isDelayed) {
-                        "Риск срыва дедлайна $delayTrack на $delayDays дня"
-                    } else {
-                        "Новый прогноз проекта: Сдача вовремя"
-                    },
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.White.copy(alpha = 0.95f),
+                Spacer(modifier = Modifier.height(8.dp))
+                LinearProgressIndicator(
+                    progress = { animatedProgress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = statusColor,
+                    trackColor = statusColor.copy(alpha = 0.15f),
+                    strokeCap = StrokeCap.Round,
                 )
+            }
 
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Progress bar
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        AnimatedNumberText(
-                            value = (animatedProgress * 100).toInt(),
-                            prefix = "Выполнено: ",
-                            suffix = "%",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = Color.White.copy(alpha = 0.85f),
-                        )
-                        Text(
-                            text = "День $elapsedDays из $totalDays",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = Color.White.copy(alpha = 0.85f),
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    LinearProgressIndicator(
-                        progress = { animatedProgress },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = Color.White,
-                        trackColor = Color.White.copy(alpha = 0.25f),
-                        strokeCap = StrokeCap.Round,
-                    )
-                }
-
-                // Reassignment success badge
-                AnimatedVisibility(
-                    visible = hasBeenReassigned && !isDelayed,
-                    enter = fadeIn(tween(600)) + slideInVertically(tween(600)),
+            // Reassignment success badge
+            AnimatedVisibility(
+                visible = hasBeenReassigned && !isDelayed,
+                enter = fadeIn(tween(600)) + slideInVertically(tween(600)),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(top = 16.dp)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(statusColor.copy(alpha = 0.12f))
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(top = 16.dp)
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White.copy(alpha = 0.2f))
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.CheckCircle,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp),
-                        )
-                        Text(
-                            text = "Сроки в Jira обновлены. Проект выровнен.",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.White,
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        tint = statusColor,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Text(
+                        text = "Сроки в Jira обновлены. Проект выровнен.",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = textColor,
+                    )
                 }
             }
         }
@@ -388,7 +354,7 @@ private fun SprintVelocityChart(
     modifier: Modifier = Modifier,
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
-    val lineColor = if (isDelayed) ErrorRed else SuccessGreen
+    val lineColor = MaterialTheme.colorScheme.primary
     val axisLabel = rememberAxisLabelComponent(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -467,24 +433,26 @@ private fun SprintVelocityChart(
 @Composable
 private fun AlertCard(
     alert: GlobalAlert,
-    onDismiss: () -> Unit,
+    onResolve: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val severityColor = when (alert.severity) {
-        "high" -> ErrorRed
-        "medium" -> WarningAmber
-        "success" -> SuccessGreen
+        "high" -> SemanticCritical
+        "medium" -> SemanticWarning
+        "success" -> SemanticSuccess
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Card(
         shape = PredictaShapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = modifier.liquidGlass(
-            shape = PredictaShapes.medium,
-            blurRadius = 0.dp,
-            isActive = alert.severity == "high",
-        ),
+        modifier = modifier
+            .fillMaxWidth()
+            .liquidGlass(
+                shape = PredictaShapes.medium,
+                blurRadius = 0.dp,
+                liquidIntensity = 0.9f,
+            ),
     ) {
         Row(
             modifier = Modifier
@@ -492,47 +460,51 @@ private fun AlertCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.Top,
         ) {
-            // Severity indicator dot
-            Box(
-                modifier = Modifier
-                    .padding(top = 4.dp)
-                    .size(10.dp)
-                    .clip(CircleShape)
-                    .background(severityColor),
-            )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = when (alert.severity) {
-                        "high" -> "Критический"
-                        "medium" -> "Предупреждение"
-                        "success" -> "Успех"
-                        else -> "Инфо"
-                    },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = severityColor,
-                    fontWeight = FontWeight.SemiBold,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    // Severity indicator dot
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(severityColor),
+                    )
+                    Text(
+                        text = when (alert.severity) {
+                            "high" -> "Критический"
+                            "medium" -> "Предупреждение"
+                            "success" -> "Успех"
+                            else -> "Инфо"
+                        },
+                        style = MaterialTheme.typography.titleSmall,
+                        color = severityColor,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+
                 Text(
                     text = alert.message,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp),
+                    color = TextSecondary,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
                 )
-            }
-
-            IconButton(
-                onClick = onDismiss,
-                modifier = Modifier.size(32.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Close,
-                    contentDescription = "Скрыть",
-                    tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                    modifier = Modifier.size(18.dp),
-                )
+                
+                Button(
+                    onClick = onResolve,
+                    shape = PredictaShapes.medium,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryBlue,
+                        contentColor = SurfaceWhite,
+                    ),
+                ) {
+                    Text(
+                        text = "Решить",
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
             }
         }
     }
