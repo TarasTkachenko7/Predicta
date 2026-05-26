@@ -31,6 +31,7 @@ class SettingsViewModel(
                     email = session.email,
                     role = session.role,
                     isLoggedIn = session.isLoggedIn,
+                    avatarUri = session.avatarUri,
                 )
             }.collect { settingsState ->
                 _state.update {
@@ -44,6 +45,12 @@ class SettingsViewModel(
         when (event) {
             is SettingsEvent.ChangeTheme -> {
                 settingsRepository.setThemeMode(event.themeMode)
+            }
+            is SettingsEvent.UpdateName -> {
+                sessionManager.updateName(event.name)
+            }
+            is SettingsEvent.UpdateAvatar -> {
+                sessionManager.updateAvatar(event.uri)
             }
             SettingsEvent.Logout -> {
                 sessionManager.clearSession()

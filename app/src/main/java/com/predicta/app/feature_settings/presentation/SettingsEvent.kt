@@ -4,5 +4,7 @@ import com.predicta.app.feature_settings.domain.model.ThemeMode
 
 sealed interface SettingsEvent {
     data class ChangeTheme(val themeMode: ThemeMode) : SettingsEvent
+    data class UpdateName(val name: String) : SettingsEvent
+    data class UpdateAvatar(val uri: String) : SettingsEvent
     data object Logout : SettingsEvent
 }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -44,6 +45,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import android.content.Intent
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
@@ -59,6 +62,18 @@ import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.theme.PredictaShapes
 import com.predicta.app.ui.theme.SemanticSuccess
 import org.koin.androidx.compose.koinViewModel
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import coil.compose.AsyncImage
+import androidx.compose.material.icons.outlined.Edit
+import com.predicta.app.ui.modifier.pressScale
 
 @Composable
 fun SettingsScreen(
@@ -80,10 +95,13 @@ fun SettingsScreen(
                 userName = state.userName,
                 email = state.email,
                 role = state.role,
+                avatarUri = state.avatarUri,
                 onLogout = {
                     viewModel.onEvent(SettingsEvent.Logout)
                     onLogout()
                 },
+                onUpdateName = { viewModel.onEvent(SettingsEvent.UpdateName(it)) },
+                onUpdateAvatar = { viewModel.onEvent(SettingsEvent.UpdateAvatar(it)) },
             )
         }
 
@@ -112,9 +130,35 @@ private fun ProfileCard(
     userName: String,
     email: String,
     role: String,
+    avatarUri: String?,
     onLogout: () -> Unit,
+    onUpdateName: (String) -> Unit,
+    onUpdateAvatar: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
+    var showEditNameDialog by remember { mutableStateOf(false) }
+    var newName by remember { mutableStateOf(userName) }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        uri?.let {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            onUpdateAvatar(it.toString())
+        }
+    }
+
+    val avatarInteractionSource = remember { MutableInteractionSource() }
+    val nameInteractionSource = remember { MutableInteractionSource() }
+
     SettingsCard(modifier = modifier) {
         SectionTitle(
             icon = Icons.Outlined.Person,
@@ -126,40 +170,81 @@ private fun ProfileCard(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(64.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                    .pressScale(avatarInteractionSource)
+                    .clickable(
+                        interactionSource = avatarInteractionSource,
+                        indication = null,
+                    ) {
+                        photoPickerLauncher.launch(
+                            PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.ImageOnly
+                            )
+                        )
+                    },
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = userName.firstOrNull()?.uppercase() ?: "P",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                if (avatarUri != null) {
+                    AsyncImage(
+                        model = avatarUri,
+                        contentDescription = "Avatar",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Outlined.Person,
+                        contentDescription = "Default Avatar",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
             }
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = userName.ifBlank { "Predicta User" },
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = userName.ifBlank { "Predicta User" },
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Icon(
+                        imageVector = Icons.Outlined.Edit,
+                        contentDescription = "Edit Name",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .size(18.dp)
+                            .pressScale(nameInteractionSource)
+                            .clickable(
+                                interactionSource = nameInteractionSource,
+                                indication = null,
+                            ) {
+                                newName = userName
+                                showEditNameDialog = true
+                            }
+                    )
+                }
                 Text(
                     text = email.ifBlank { "user@predicta.ai" },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp)
                 )
                 Text(
                     text = role.ifBlank { "manager" }.replaceFirstChar { it.uppercase() },
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(top = 2.dp),
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
         }
@@ -183,6 +268,44 @@ private fun ProfileCard(
             Text(
                 text = "Выйти из аккаунта",
                 fontWeight = FontWeight.SemiBold,
+            )
+        }
+
+        if (showEditNameDialog) {
+            AlertDialog(
+                onDismissRequest = { showEditNameDialog = false },
+                title = {
+                    Text("Редактировать имя", fontWeight = FontWeight.Bold)
+                },
+                text = {
+                    OutlinedTextField(
+                        value = newName,
+                        onValueChange = { newName = it },
+                        singleLine = true,
+                        label = { Text("Имя") }
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            if (newName.isNotBlank()) {
+                                onUpdateName(newName)
+                            }
+                            showEditNameDialog = false
+                        }
+                    ) {
+                        Text("Сохранить", fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showEditNameDialog = false }
+                    ) {
+                        Text("Отмена")
+                    }
+                },
+                shape = PredictaShapes.medium,
+                containerColor = MaterialTheme.colorScheme.surface,
             )
         }
     }

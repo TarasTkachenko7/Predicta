@@ -175,10 +175,12 @@ fun PredictaScaffold(
                         }
                     },
                     onResolveAlert = { alertId ->
-                        if (alertId == "alert_pavel_burnout") {
-                            navController.navigate(Screen.EmployeeCard.createRoute("emp_2"))
-                        } else {
-                            navController.navigate(Screen.TeamVelocity.route)
+                        navController.navigate(Screen.TeamVelocity.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
                     }
                 )

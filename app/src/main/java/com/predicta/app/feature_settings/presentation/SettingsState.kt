@@ -8,4 +8,5 @@ data class SettingsState(
     val email: String = "",
     val role: String = "",
     val isLoggedIn: Boolean = false,
+    val avatarUri: String? = null,
 )

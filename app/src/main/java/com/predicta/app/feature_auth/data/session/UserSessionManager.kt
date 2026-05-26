@@ -17,6 +17,7 @@ class UserSessionManager(context: Context) {
             userName = preferences.getString(KEY_USER_NAME, "").orEmpty(),
             email = preferences.getString(KEY_EMAIL, "").orEmpty(),
             role = preferences.getString(KEY_ROLE, "").orEmpty(),
+            avatarUri = preferences.getString(KEY_AVATAR_URI, null),
         ),
     )
     val session: StateFlow<UserSession> = _session.asStateFlow()
@@ -50,12 +51,23 @@ class UserSessionManager(context: Context) {
         _session.value = UserSession()
     }
 
+    fun updateName(name: String) {
+        preferences.edit().putString(KEY_USER_NAME, name).apply()
+        _session.update { it.copy(userName = name) }
+    }
+
+    fun updateAvatar(uri: String) {
+        preferences.edit().putString(KEY_AVATAR_URI, uri).apply()
+        _session.update { it.copy(avatarUri = uri) }
+    }
+
     private companion object {
         const val PREFERENCES_NAME = "predicta_session"
         const val KEY_IS_LOGGED_IN = "is_logged_in"
         const val KEY_USER_NAME = "user_name"
         const val KEY_EMAIL = "email"
         const val KEY_ROLE = "role"
+        const val KEY_AVATAR_URI = "avatar_uri"
     }
 }
 
@@ -64,4 +76,5 @@ data class UserSession(
     val userName: String = "",
     val email: String = "",
     val role: String = "",
+    val avatarUri: String? = null,
 )
