@@ -206,7 +206,7 @@ private fun PavelCardContent(
             item {
                 Card(
                     shape = PredictaShapes.medium,
-                    colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier
                         .fillMaxWidth()
                         .liquidGlass(
@@ -367,7 +367,7 @@ private fun OlegCardContent(
             Card(
                 shape = PredictaShapes.medium,
                 colors = CardDefaults.cardColors(
-                    containerColor = SurfaceWhite,
+                    containerColor = MaterialTheme.colorScheme.surface,
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -455,7 +455,7 @@ private fun EmployeeHeaderCard(
 
     Card(
         shape = PredictaShapes.medium,
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = modifier
             .fillMaxWidth()
             .liquidGlass(
@@ -783,8 +783,8 @@ private fun AiInsightCard(
                 .background(
                     brush = Brush.linearGradient(
                         listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
-                            Color(0xFFF3E5F5).copy(alpha = 0.3f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.08f),
                         ),
                     ),
                 )

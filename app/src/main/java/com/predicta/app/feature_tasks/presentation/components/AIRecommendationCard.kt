@@ -1,4 +1,4 @@
-﻿package com.predicta.app.feature_tasks.presentation.components
+package com.predicta.app.feature_tasks.presentation.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
@@ -38,14 +38,6 @@ import com.predicta.app.ui.theme.PredictaShapes
 import com.predicta.app.ui.theme.PrimaryBlue
 import com.predicta.app.ui.theme.SecondarySlate
 
-/** Soft AI-blue background color. */
-private val AiCardBackground = Color(0xFFE6F0FA)
-
-/**
- * A distinctly styled card that appears when the AI engine detects
- * a risky task assignment. Features a sparkling icon with a subtle
- * pulse animation to convey AI-powered intelligence.
- */
 @Composable
 fun AIRecommendationCard(
     recommendation: String?,
@@ -84,6 +76,8 @@ private fun AiCardContent(
         label = "sparkle_alpha",
     )
 
+    val aiCardBackground = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -93,7 +87,7 @@ private fun AiCardContent(
                 isActive = true,
             )
             .clip(PredictaShapes.medium)
-            .background(AiCardBackground)
+            .background(aiCardBackground)
             .padding(16.dp),
     ) {
         Row(

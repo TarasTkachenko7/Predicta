@@ -61,6 +61,7 @@ import com.predicta.app.feature_auth.data.session.UserSessionManager
 import com.predicta.app.feature_auth.presentation.ForgotPasswordScreen
 import com.predicta.app.feature_auth.presentation.LoginScreen
 import com.predicta.app.feature_auth.presentation.RegisterScreen
+import com.predicta.app.feature_auth.presentation.SplashScreen
 import com.predicta.app.feature_connectivity.presentation.NoInternetScreen
 import com.predicta.app.feature_dashboard.presentation.DashboardScreen
 import com.predicta.app.feature_employees.presentation.EmployeeCardScreen
@@ -98,6 +99,7 @@ fun PredictaScaffold(
         Screen.Login.route,
         Screen.Register.route,
         Screen.ForgotPassword.route,
+        Screen.Splash.route,
     )
 
     Scaffold(
@@ -126,8 +128,8 @@ fun PredictaScaffold(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = if (session.isLoggedIn) Screen.Dashboard.route else Screen.Login.route,
-            modifier = Modifier.padding(innerPadding),
+            startDestination = Screen.Splash.route,
+            modifier = Modifier.fillMaxSize(),
             enterTransition = {
                 fadeIn(tween(220)) + slideInHorizontally { it / 6 }
             },
@@ -141,6 +143,17 @@ fun PredictaScaffold(
                 fadeOut(tween(140)) + slideOutHorizontally { it / 8 }
             },
         ) {
+            composable(Screen.Splash.route) {
+                SplashScreen(
+                    onSplashComplete = {
+                        val destination = if (session.isLoggedIn) Screen.Dashboard.route else Screen.Login.route
+                        navController.navigate(destination) {
+                            popUpTo(Screen.Splash.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
             // Auth Flow
             composable(Screen.Login.route) {
                 LoginScreen(
@@ -182,7 +195,8 @@ fun PredictaScaffold(
                             launchSingleTop = true
                             restoreState = true
                         }
-                    }
+                    },
+                    modifier = Modifier.padding(innerPadding)
                 )
             }
 
@@ -194,6 +208,7 @@ fun PredictaScaffold(
                             Screen.EmployeeCard.createRoute(employeeId),
                         )
                     },
+                    modifier = Modifier.padding(innerPadding)
                 )
             }
 
@@ -208,6 +223,7 @@ fun PredictaScaffold(
                             launchSingleTop = true
                         }
                     },
+                    modifier = Modifier.padding(innerPadding)
                 )
             }
 
@@ -227,6 +243,7 @@ fun PredictaScaffold(
                             Screen.TaskReassignment.createRoute(taskId),
                         )
                     },
+                    modifier = Modifier.padding(innerPadding)
                 )
             }
 
@@ -248,6 +265,7 @@ fun PredictaScaffold(
                             launchSingleTop = true
                         }
                     },
+                    modifier = Modifier.padding(innerPadding)
                 )
             }
         }

@@ -333,7 +333,7 @@ private fun RecommendedAssigneeCard(
     Card(
         shape = PredictaShapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = SurfaceWhite,
+            containerColor = MaterialTheme.colorScheme.surface,
         ),
         modifier = modifier
             .fillMaxWidth()
