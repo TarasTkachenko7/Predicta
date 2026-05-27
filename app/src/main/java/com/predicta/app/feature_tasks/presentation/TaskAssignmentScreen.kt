@@ -50,9 +50,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.predicta.app.data.demo.DemoStateManager
-import com.predicta.app.data.demo.DemoTask
-import com.predicta.app.data.demo.TaskStatus
 import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.theme.BackgroundCritical
 import com.predicta.app.ui.theme.BackgroundSuccess
@@ -76,9 +73,9 @@ fun TaskReassignmentScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     androidx.compose.runtime.LaunchedEffect(Unit) {
-        viewModel.navigation.collect { action ->
+        viewModel.effects.collect { action ->
             when (action) {
-                TaskReassignmentNavAction.GoToDashboard -> onReassignmentComplete()
+                TaskReassignmentEffect.GoToDashboard -> onReassignmentComplete()
             }
         }
     }
@@ -336,7 +333,7 @@ private fun RecommendedAssigneeCard(
     Card(
         shape = PredictaShapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = SurfaceWhite,
+            containerColor = MaterialTheme.colorScheme.surface,
         ),
         modifier = modifier
             .fillMaxWidth()

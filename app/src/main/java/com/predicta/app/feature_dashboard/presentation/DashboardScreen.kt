@@ -95,10 +95,10 @@ fun DashboardScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        viewModel.navigation.collect { action ->
+        viewModel.effects.collect { action ->
             when (action) {
-                DashboardNavAction.GoToTeamVelocity -> onNavigateToTeamVelocity()
-                is DashboardNavAction.ResolveAlert -> onResolveAlert(action.targetId)
+                DashboardEffect.GoToTeamVelocity -> onNavigateToTeamVelocity()
+                is DashboardEffect.ResolveAlert -> onResolveAlert(action.targetId)
             }
         }
     }
@@ -488,7 +488,7 @@ private fun AlertCard(
                 Text(
                     text = alert.message,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
                 )
                 

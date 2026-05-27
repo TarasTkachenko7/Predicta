@@ -1,11 +1,11 @@
 package com.predicta.app.feature_tasks.domain.usecase
 
-import com.predicta.app.data.demo.DemoStateManager
+import com.predicta.app.feature_dashboard.domain.repository.DashboardRepository
 
 class ReassignTaskUseCase(
-    private val demoStateManager: DemoStateManager
+    private val repository: DashboardRepository,
 ) {
     operator fun invoke(taskId: String) {
-        demoStateManager.reassignTask(taskId)
+        repository.reassignTask(taskId)
     }
 }

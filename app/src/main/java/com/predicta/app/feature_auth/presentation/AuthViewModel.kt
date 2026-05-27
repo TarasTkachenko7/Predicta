@@ -1,183 +1,134 @@
 package com.predicta.app.feature_auth.presentation
 
-import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.predicta.app.core.error.AppResult
+import com.predicta.app.core.ui.UiEffect
+import com.predicta.app.core.ui.toUiText
 import com.predicta.app.feature_auth.data.session.UserSessionManager
-import com.predicta.app.feature_auth.domain.repository.AuthRepository
+import com.predicta.app.feature_auth.domain.usecase.AuthInteractors
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class AuthViewModel(
-    private val loginUseCase: com.predicta.app.feature_auth.domain.usecase.LoginUseCase,
-    private val registerUseCase: com.predicta.app.feature_auth.domain.usecase.RegisterUseCase,
-    private val resetPasswordUseCase: com.predicta.app.feature_auth.domain.usecase.ResetPasswordUseCase,
+    private val interactors: AuthInteractors,
     private val sessionManager: UserSessionManager,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthState())
     val state: StateFlow<AuthState> = _state.asStateFlow()
 
+    private val _effects = MutableSharedFlow<AuthEffect>()
+    val effects: SharedFlow<AuthEffect> = _effects.asSharedFlow()
+
     fun onEvent(event: AuthEvent) {
         when (event) {
-            is AuthEvent.EmailChanged -> {
-                _state.update { it.copy(email = event.value, emailError = null, globalError = null) }
-            }
-            is AuthEvent.PasswordChanged -> {
-                _state.update { it.copy(password = event.value, passwordError = null, globalError = null) }
-            }
-            is AuthEvent.NameChanged -> {
-                _state.update { it.copy(name = event.value, nameError = null, globalError = null) }
-            }
-            AuthEvent.FillDemoCredentials -> {
-                _state.update {
-                    it.copy(
-                        email = "demo@predicta.ai",
-                        password = "demo123",
-                        emailError = null,
-                        passwordError = null,
-                        globalError = null,
-                    )
-                }
-            }
+            is AuthEvent.EmailChanged,
+            is AuthEvent.PasswordChanged,
+            is AuthEvent.NameChanged,
+            AuthEvent.FillDemoCredentials,
+            is AuthEvent.RecoveryCodeChanged,
+            is AuthEvent.NewPasswordChanged,
+            is AuthEvent.ConfirmPasswordChanged,
+            AuthEvent.ResetSuccessState,
+            AuthEvent.ResetPasswordRecoveryStep,
+            -> _state.update { reduceAuthInput(it, event) }
+
             AuthEvent.LoginDemoSubmit -> {
-                _state.update {
-                    it.copy(
-                        email = "demo@predicta.ai",
-                        password = "demo123",
-                        emailError = null,
-                        passwordError = null,
-                        globalError = null,
-                    )
-                }
+                _state.update { reduceAuthInput(it, event) }
                 login()
-            }
-            is AuthEvent.RecoveryCodeChanged -> {
-                _state.update { it.copy(recoveryCode = event.value, recoveryCodeError = null, globalError = null) }
-            }
-            is AuthEvent.NewPasswordChanged -> {
-                _state.update {
-                    it.copy(
-                        newPassword = event.value,
-                        newPasswordError = null,
-                        confirmPasswordError = null,
-                        globalError = null
-                    )
-                }
-            }
-            is AuthEvent.ConfirmPasswordChanged -> {
-                _state.update {
-                    it.copy(
-                        confirmPassword = event.value,
-                        newPasswordError = null,
-                        confirmPasswordError = null,
-                        globalError = null
-                    )
-                }
             }
             AuthEvent.LoginSubmit -> login()
             AuthEvent.RegisterSubmit -> register()
-            AuthEvent.ResetSubmit -> submitEmailForReset()
-            AuthEvent.SubmitEmailForReset -> submitEmailForReset()
+            AuthEvent.ResetSubmit,
+            AuthEvent.SubmitEmailForReset,
+            -> submitEmailForReset()
             AuthEvent.SubmitRecoveryCode -> submitRecoveryCode()
             AuthEvent.SubmitNewPasswords -> submitNewPasswords()
-            AuthEvent.ResetSuccessState -> {
-                _state.update { it.copy(isSuccess = false) }
-            }
-            AuthEvent.ResetPasswordRecoveryStep -> {
-                _state.update {
-                    it.copy(
-                        resetStep = ResetStep.EMAIL_INPUT,
-                        recoveryCode = "",
-                        recoveryCodeError = null,
-                        newPassword = "",
-                        newPasswordError = null,
-                        confirmPassword = "",
-                        confirmPasswordError = null,
-                        email = "",
-                        emailError = null,
-                        globalError = null
-                    )
-                }
-            }
         }
     }
 
     private fun login() {
-        val emailError = validateEmail(_state.value.email)
-        val passwordError = validatePassword(_state.value.password)
-
-        if (emailError != null || passwordError != null) {
-            _state.update { it.copy(emailError = emailError, passwordError = passwordError) }
+        val errors = validateLogin(_state.value)
+        if (errors.isNotEmpty()) {
+            _state.update { applyValidationErrors(it.copy(globalError = null), errors) }
             return
         }
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, globalError = null) }
-            val result = loginUseCase(_state.value.email, _state.value.password)
-            result.onSuccess { user ->
-                sessionManager.startSession(user)
-                _state.update { it.copy(isLoading = false, isSuccess = true) }
-            }.onFailure { e ->
-                _state.update { it.copy(isLoading = false, globalError = e.message) }
+            when (val result = interactors.login(_state.value.email, _state.value.password)) {
+                is AppResult.Success -> {
+                    sessionManager.startSession(result.value)
+                    _state.update { it.copy(isLoading = false, isSuccess = true) }
+                    _effects.emit(AuthEffect.Authenticated)
+                }
+                is AppResult.Failure -> {
+                    _state.update {
+                        it.copy(isLoading = false, globalError = result.error.toUiText())
+                    }
+                }
             }
         }
     }
 
     private fun register() {
-        val emailError = validateEmail(_state.value.email)
-        val passwordError = validatePassword(_state.value.password)
-        val nameError = if (_state.value.name.isBlank()) "Имя не может быть пустым" else null
-
-        if (emailError != null || passwordError != null || nameError != null) {
-            _state.update {
-                it.copy(
-                    emailError = emailError,
-                    passwordError = passwordError,
-                    nameError = nameError
-                )
-            }
+        val errors = validateRegister(_state.value)
+        if (errors.isNotEmpty()) {
+            _state.update { applyValidationErrors(it.copy(globalError = null), errors) }
             return
         }
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, globalError = null) }
-            val result = registerUseCase(_state.value.email, _state.value.password, _state.value.name)
-            result.onSuccess { user ->
-                sessionManager.startSession(user)
-                _state.update { it.copy(isLoading = false, isSuccess = true) }
-            }.onFailure { e ->
-                _state.update { it.copy(isLoading = false, globalError = e.message) }
+            when (val result = interactors.register(_state.value.email, _state.value.password, _state.value.name)) {
+                is AppResult.Success -> {
+                    sessionManager.startSession(result.value)
+                    _state.update { it.copy(isLoading = false, isSuccess = true) }
+                    _effects.emit(AuthEffect.Authenticated)
+                }
+                is AppResult.Failure -> {
+                    _state.update {
+                        it.copy(isLoading = false, globalError = result.error.toUiText())
+                    }
+                }
             }
         }
     }
 
     private fun submitEmailForReset() {
-        val emailError = validateEmail(_state.value.email)
-        if (emailError != null) {
-            _state.update { it.copy(emailError = emailError) }
+        val errors = validateResetEmail(_state.value)
+        if (errors.isNotEmpty()) {
+            _state.update { applyValidationErrors(it.copy(globalError = null), errors) }
             return
         }
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, globalError = null) }
-            val result = resetPasswordUseCase(_state.value.email)
-            result.onSuccess {
-                _state.update { it.copy(isLoading = false, resetStep = ResetStep.CODE_VERIFICATION) }
-            }.onFailure { e ->
-                _state.update { it.copy(isLoading = false, globalError = e.message) }
+            when (val result = interactors.resetPassword(_state.value.email)) {
+                is AppResult.Success -> {
+                    _state.update { it.copy(isLoading = false, resetStep = ResetStep.CODE_VERIFICATION) }
+                }
+                is AppResult.Failure -> {
+                    _state.update {
+                        it.copy(isLoading = false, globalError = result.error.toUiText())
+                    }
+                }
             }
         }
     }
 
     private fun submitRecoveryCode() {
-        val code = _state.value.recoveryCode
-        if (code.isBlank()) {
-            _state.update { it.copy(recoveryCodeError = "Код не может быть пустым") }
+        val errors = validateRecoveryCode(_state.value)
+        if (errors.isNotEmpty()) {
+            _state.update { applyValidationErrors(it.copy(globalError = null), errors) }
             return
         }
 
@@ -189,26 +140,9 @@ class AuthViewModel(
     }
 
     private fun submitNewPasswords() {
-        val newPass = _state.value.newPassword
-        val confirmPass = _state.value.confirmPassword
-
-        if (newPass.length < 5) {
-            _state.update {
-                it.copy(
-                    newPasswordError = "Минимум 5 символов",
-                    confirmPasswordError = "Минимум 5 символов"
-                )
-            }
-            return
-        }
-
-        if (newPass != confirmPass) {
-            _state.update {
-                it.copy(
-                    newPasswordError = null,
-                    confirmPasswordError = "Пароли не совпадают"
-                )
-            }
+        val errors = validateNewPasswords(_state.value)
+        if (errors.isNotEmpty()) {
+            _state.update { applyValidationErrors(it.copy(globalError = null), errors) }
             return
         }
 
@@ -218,16 +152,8 @@ class AuthViewModel(
             _state.update { it.copy(isLoading = false, resetStep = ResetStep.SUCCESS) }
         }
     }
+}
 
-    private fun validateEmail(email: String): String? {
-        if (email.isBlank()) return "Электронная почта не может быть пустой"
-        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) return "Неверный формат электронной почты"
-        return null
-    }
-
-    private fun validatePassword(password: String): String? {
-        if (password.isBlank()) return "Пароль не может быть пустым"
-        if (password.length < 5) return "Минимум 5 символов"
-        return null
-    }
+sealed interface AuthEffect : UiEffect {
+    data object Authenticated : AuthEffect
 }

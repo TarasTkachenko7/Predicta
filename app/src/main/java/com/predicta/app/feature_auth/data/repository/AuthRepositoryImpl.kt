@@ -1,15 +1,19 @@
 package com.predicta.app.feature_auth.data.repository
 
+import com.predicta.app.core.error.AppError
+import com.predicta.app.core.error.AppResult
+import com.predicta.app.core.error.ValidationField
+import com.predicta.app.core.error.ValidationReason
 import com.predicta.app.feature_auth.domain.model.User
 import com.predicta.app.feature_auth.domain.repository.AuthRepository
 import kotlinx.coroutines.delay
 
 class AuthRepositoryImpl : AuthRepository {
 
-    override suspend fun login(email: String, password: String): Result<User> {
+    override suspend fun login(email: String, password: String): AppResult<User> {
         delay(500) // Simulate network delay
         if (email.isNotBlank() && password.isNotBlank()) {
-            return Result.success(
+            return AppResult.Success(
                 User(
                     id = "user_123",
                     email = email,
@@ -18,13 +22,13 @@ class AuthRepositoryImpl : AuthRepository {
                 )
             )
         }
-        return Result.failure(Exception("Неверные учетные данные"))
+        return AppResult.Failure(AppError.Auth)
     }
 
-    override suspend fun register(email: String, password: String, name: String): Result<User> {
+    override suspend fun register(email: String, password: String, name: String): AppResult<User> {
         delay(500) // Simulate network delay
         if (email.isNotBlank() && password.isNotBlank() && name.isNotBlank()) {
-            return Result.success(
+            return AppResult.Success(
                 User(
                     id = "user_new",
                     email = email,
@@ -33,14 +37,14 @@ class AuthRepositoryImpl : AuthRepository {
                 )
             )
         }
-        return Result.failure(Exception("Неверные регистрационные данные"))
+        return AppResult.Failure(AppError.Validation(ValidationField.EMAIL, ValidationReason.BLANK))
     }
 
-    override suspend fun resetPassword(email: String): Result<Unit> {
+    override suspend fun resetPassword(email: String): AppResult<Unit> {
         delay(500) // Simulate network delay
         if (email.isNotBlank()) {
-            return Result.success(Unit)
+            return AppResult.Success(Unit)
         }
-        return Result.failure(Exception("Необходимо указать адрес электронной почты"))
+        return AppResult.Failure(AppError.Validation(ValidationField.EMAIL, ValidationReason.BLANK))
     }
 }

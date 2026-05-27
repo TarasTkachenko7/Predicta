@@ -65,10 +65,14 @@ fun RegisterScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     val registerInteraction = remember { MutableInteractionSource() }
 
-    LaunchedEffect(state.isSuccess) {
-        if (state.isSuccess) {
-            viewModel.onEvent(AuthEvent.ResetSuccessState)
-            onNavigateBackToLogin()
+    LaunchedEffect(Unit) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                AuthEffect.Authenticated -> {
+                    viewModel.onEvent(AuthEvent.ResetSuccessState)
+                    onNavigateBackToLogin()
+                }
+            }
         }
     }
 

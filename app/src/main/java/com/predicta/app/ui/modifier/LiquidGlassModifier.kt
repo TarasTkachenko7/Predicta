@@ -124,7 +124,7 @@ fun Modifier.liquidGlass(
             val shimmerCenter = diagonal * shimmerProgress
             val glintWidth = width * 0.34f
             val tintOverlayAlpha = (resolvedTint.alpha * 0.32f * pulse).coerceIn(0f, 0.24f)
-            val liquidAlpha = (0.105f * liquidIntensity * pulse).coerceIn(0f, 0.28f)
+            val liquidAlpha = if (darkTheme) 0f else (0.105f * liquidIntensity * pulse).coerceIn(0f, 0.28f)
             val borderAlpha = (if (darkTheme) 0.42f else 0.52f) * pulse
 
             val liquidBrush = Brush.linearGradient(
@@ -160,12 +160,14 @@ fun Modifier.liquidGlass(
                     brush = SolidColor(resolvedTint),
                     alpha = tintOverlayAlpha,
                 )
-                drawLiquidOutline(
-                    outline = outline,
-                    brush = liquidBrush,
-                    alpha = liquidAlpha,
-                    blendMode = BlendMode.Screen,
-                )
+                if (liquidAlpha > 0f) {
+                    drawLiquidOutline(
+                        outline = outline,
+                        brush = liquidBrush,
+                        alpha = liquidAlpha,
+                        blendMode = BlendMode.Screen,
+                    )
+                }
                 drawLiquidOutline(
                     outline = outline,
                     brush = borderBrush,

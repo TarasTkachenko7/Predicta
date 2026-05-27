@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.update
 class DemoStateManager {
 
     private val _demoState = MutableStateFlow(createInitialState())
-    val demoState: StateFlow<DemoData> = _demoState.asStateFlow()
+    val demoState: StateFlow<DemoDataDto> = _demoState.asStateFlow()
 
     /**
      * Reassign a task from Pavel to Oleg.
@@ -94,8 +94,8 @@ class DemoStateManager {
         private const val PAVEL_INITIAL_DONE = 1
         private const val PAVEL_INITIAL_TOTAL = 5
 
-        private fun createInitialState(): DemoData {
-            return DemoData(
+        private fun createInitialState(): DemoDataDto {
+            return DemoDataDto(
                 sprintNumber = 5,
                 sprintName = "Спринт №5",
                 isProjectDelayed = true,
@@ -118,35 +118,35 @@ class DemoStateManager {
                 pavelTotal = PAVEL_INITIAL_TOTAL,
 
                 pavelTasks = listOf(
-                    DemoTask(
+                    DemoTaskDto(
                         id = "task_001",
                         title = "Миграция базы данных",
                         status = TaskStatus.DONE,
                         assigneeId = PAVEL_ID,
                         assigneeName = "Павел",
                     ),
-                    DemoTask(
+                    DemoTaskDto(
                         id = "task_002",
                         title = "Интеграция GigaChat API",
                         status = TaskStatus.IN_PROGRESS,
                         assigneeId = PAVEL_ID,
                         assigneeName = "Павел",
                     ),
-                    DemoTask(
+                    DemoTaskDto(
                         id = "task_003",
                         title = "Настройка авторизации (OAuth2)",
                         status = TaskStatus.TODO,
                         assigneeId = PAVEL_ID,
                         assigneeName = "Павел",
                     ),
-                    DemoTask(
+                    DemoTaskDto(
                         id = "task_004",
                         title = "REST-эндпоинты для аналитики",
                         status = TaskStatus.TODO,
                         assigneeId = PAVEL_ID,
                         assigneeName = "Павел",
                     ),
-                    DemoTask(
+                    DemoTaskDto(
                         id = "task_005",
                         title = "Тестирование Velocity Engine",
                         status = TaskStatus.TODO,
@@ -175,7 +175,7 @@ class DemoStateManager {
 /**
  * Complete snapshot of the demo scenario state.
  */
-data class DemoData(
+data class DemoDataDto(
     // Sprint
     val sprintNumber: Int,
     val sprintName: String,
@@ -201,7 +201,7 @@ data class DemoData(
     val pavelTotal: Int,
 
     // Pavel's tasks
-    val pavelTasks: List<DemoTask>,
+    val pavelTasks: List<DemoTaskDto>,
 
     // AI insight for Pavel
     val pavelAiInsight: String,
@@ -216,7 +216,7 @@ data class DemoData(
     val isDeepWorkActive: Boolean,
 )
 
-data class DemoTask(
+data class DemoTaskDto(
     val id: String,
     val title: String,
     val status: TaskStatus,
