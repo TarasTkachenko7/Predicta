@@ -3,8 +3,10 @@ package com.predicta.app.feature_employees.presentation
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.predicta.app.data.demo.DemoStateManager
-import com.predicta.app.data.demo.TaskStatus
+import com.predicta.app.feature_dashboard.domain.model.DashboardEmployeeIds
+import com.predicta.app.feature_dashboard.domain.model.DashboardTaskStatus
+import com.predicta.app.feature_dashboard.domain.usecase.GetDemoStateUseCase
+import com.predicta.app.feature_employees.domain.usecase.ToggleDeepWorkUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,8 +15,8 @@ import kotlinx.coroutines.launch
 
 class EmployeeCardViewModel(
     savedStateHandle: SavedStateHandle,
-    private val getDemoStateUseCase: com.predicta.app.feature_dashboard.domain.usecase.GetDemoStateUseCase,
-    private val toggleDeepWorkUseCase: com.predicta.app.feature_employees.domain.usecase.ToggleDeepWorkUseCase,
+    private val getDemoStateUseCase: GetDemoStateUseCase,
+    private val toggleDeepWorkUseCase: ToggleDeepWorkUseCase,
 ) : ViewModel() {
 
     private val employeeId: String = checkNotNull(savedStateHandle["employeeId"])
@@ -25,7 +27,7 @@ class EmployeeCardViewModel(
     init {
         viewModelScope.launch {
             getDemoStateUseCase().collect { demo ->
-                val isPavel = employeeId == DemoStateManager.PAVEL_ID
+                val isPavel = employeeId == DashboardEmployeeIds.PAVEL_ID
                 
                 if (isPavel) {
                     _state.update {
@@ -48,7 +50,8 @@ class EmployeeCardViewModel(
                     }
                 } else {
                     val assignedTasks = demo.pavelTasks.filter { task ->
-                        task.assigneeId == DemoStateManager.OLEG_ID && task.status == TaskStatus.REASSIGNED
+                        task.assigneeId == DashboardEmployeeIds.OLEG_ID &&
+                            task.status == DashboardTaskStatus.REASSIGNED
                     }
                     _state.update {
                         it.copy(

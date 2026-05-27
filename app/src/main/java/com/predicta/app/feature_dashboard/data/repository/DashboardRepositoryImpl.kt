@@ -1,15 +1,34 @@
 package com.predicta.app.feature_dashboard.data.repository
 
+import com.predicta.app.data.demo.DemoStateManager
+import com.predicta.app.feature_dashboard.data.mapper.toDomain
 import com.predicta.app.feature_dashboard.domain.model.GlobalAlert
+import com.predicta.app.feature_dashboard.domain.model.DashboardSnapshot
 import com.predicta.app.feature_dashboard.domain.model.TeamPace
 import com.predicta.app.feature_dashboard.domain.repository.DashboardRepository
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /**
  * Mock implementation returning static dummy data.
  * Replace with real API/DB calls once the backend is integrated.
  */
-class DashboardRepositoryImpl : DashboardRepository {
+class DashboardRepositoryImpl(
+    private val demoStateManager: DemoStateManager,
+) : DashboardRepository {
+
+    override fun observeSnapshot(): Flow<DashboardSnapshot> {
+        return demoStateManager.demoState.map { it.toDomain() }
+    }
+
+    override fun reassignTask(taskId: String) {
+        demoStateManager.reassignTask(taskId)
+    }
+
+    override fun toggleDeepWork() {
+        demoStateManager.toggleDeepWork()
+    }
 
     override suspend fun getTeamPace(): List<TeamPace> {
         delay(400) // Simulate network latency

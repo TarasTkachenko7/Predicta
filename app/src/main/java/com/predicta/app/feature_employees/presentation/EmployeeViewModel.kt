@@ -2,7 +2,9 @@ package com.predicta.app.feature_employees.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.predicta.app.data.demo.DemoStateManager
+import com.predicta.app.core.ui.UiEffect
+import com.predicta.app.feature_dashboard.domain.model.DashboardSnapshot
+import com.predicta.app.feature_dashboard.domain.usecase.GetDemoStateUseCase
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -17,14 +19,15 @@ import kotlinx.coroutines.launch
  * Observes [DemoStateManager] for live data about Oleg and Pavel.
  */
 class EmployeeViewModel(
-    private val getDemoStateUseCase: com.predicta.app.feature_dashboard.domain.usecase.GetDemoStateUseCase,
+    private val getDemoStateUseCase: GetDemoStateUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(EmployeeState())
     val state: StateFlow<EmployeeState> = _state.asStateFlow()
 
-    private val _navigation = MutableSharedFlow<EmployeeNavAction>()
-    val navigation: SharedFlow<EmployeeNavAction> = _navigation.asSharedFlow()
+    private val _effects = MutableSharedFlow<EmployeeEffect>()
+    val effects: SharedFlow<EmployeeEffect> = _effects.asSharedFlow()
+    private var latestSnapshot: DashboardSnapshot? = null
 
     init {
         observeDemoState()
@@ -32,11 +35,11 @@ class EmployeeViewModel(
 
     fun onEvent(event: EmployeeEvent) {
         when (event) {
-            is EmployeeEvent.Refresh -> applyDemoState(getDemoStateUseCase().value)
+            is EmployeeEvent.Refresh -> latestSnapshot?.let(::applyDemoState)
             is EmployeeEvent.SelectEmployee -> {
                 viewModelScope.launch {
-                    _navigation.emit(
-                        EmployeeNavAction.GoToEmployeeCard(event.employeeId),
+                    _effects.emit(
+                        EmployeeEffect.GoToEmployeeCard(event.employeeId),
                     )
                 }
             }
@@ -46,12 +49,13 @@ class EmployeeViewModel(
     private fun observeDemoState() {
         viewModelScope.launch {
             getDemoStateUseCase().collect { demo ->
+                latestSnapshot = demo
                 applyDemoState(demo)
             }
         }
     }
 
-    private fun applyDemoState(demo: com.predicta.app.data.demo.DemoData) {
+    private fun applyDemoState(demo: DashboardSnapshot) {
         _state.update {
             it.copy(
                 isLoading = false,
@@ -61,6 +65,6 @@ class EmployeeViewModel(
     }
 }
 
-sealed interface EmployeeNavAction {
-    data class GoToEmployeeCard(val employeeId: String) : EmployeeNavAction
+sealed interface EmployeeEffect : UiEffect {
+    data class GoToEmployeeCard(val employeeId: String) : EmployeeEffect
 }

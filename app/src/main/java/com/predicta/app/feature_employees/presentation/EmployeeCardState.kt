@@ -1,6 +1,6 @@
 package com.predicta.app.feature_employees.presentation
 
-import com.predicta.app.data.demo.DemoTask
+import com.predicta.app.feature_dashboard.domain.model.DashboardTask
 
 data class EmployeeCardState(
     val isLoading: Boolean = true,
@@ -15,7 +15,7 @@ data class EmployeeCardState(
     val deadlineDays: Int = 0,
     val aiInsight: String = "",
     val riskFactors: List<String> = emptyList(),
-    val tasks: List<DemoTask> = emptyList(),
+    val tasks: List<DashboardTask> = emptyList(),
     val isDeepWorkActive: Boolean = false,
     val showRecoveryForecast: Boolean = false,
     val recoveryForecastData: List<Float> = emptyList(),

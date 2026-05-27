@@ -81,10 +81,8 @@ import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
-import com.predicta.app.data.demo.DemoData
-import com.predicta.app.data.demo.DemoStateManager
-import com.predicta.app.data.demo.DemoTask
-import com.predicta.app.data.demo.TaskStatus
+import com.predicta.app.feature_dashboard.domain.model.DashboardTask
+import com.predicta.app.feature_dashboard.domain.model.DashboardTaskStatus
 import com.predicta.app.ui.components.AnimatedNumberText
 import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.modifier.pressScale
@@ -525,7 +523,7 @@ private fun EmployeeHeaderCard(
 
 @Composable
 private fun AssignedTaskCard(
-    task: DemoTask,
+    task: DashboardTask,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -929,25 +927,26 @@ private fun InsightReasonRow(
 
 @Composable
 private fun TaskCard(
-    task: DemoTask,
+    task: DashboardTask,
     onReassign: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val statusColor = when (task.status) {
-        TaskStatus.DONE -> SemanticSuccess
-        TaskStatus.IN_PROGRESS -> SemanticWarning
-        TaskStatus.TODO -> MaterialTheme.colorScheme.onSurfaceVariant
-        TaskStatus.REASSIGNED -> MaterialTheme.colorScheme.primary
+        DashboardTaskStatus.DONE -> SemanticSuccess
+        DashboardTaskStatus.IN_PROGRESS -> SemanticWarning
+        DashboardTaskStatus.TODO -> MaterialTheme.colorScheme.onSurfaceVariant
+        DashboardTaskStatus.REASSIGNED -> MaterialTheme.colorScheme.primary
     }
 
     val statusLabel = when (task.status) {
-        TaskStatus.DONE -> "Выполнено"
-        TaskStatus.IN_PROGRESS -> "В работе"
-        TaskStatus.TODO -> "Ожидает"
-        TaskStatus.REASSIGNED -> "Переназначена → ${task.assigneeName}"
+        DashboardTaskStatus.DONE -> "Выполнено"
+        DashboardTaskStatus.IN_PROGRESS -> "В работе"
+        DashboardTaskStatus.TODO -> "Ожидает"
+        DashboardTaskStatus.REASSIGNED -> "Переназначена → ${task.assigneeName}"
     }
 
-    val canReassign = task.status == TaskStatus.IN_PROGRESS || task.status == TaskStatus.TODO
+    val canReassign = task.status == DashboardTaskStatus.IN_PROGRESS ||
+        task.status == DashboardTaskStatus.TODO
 
     Card(
         shape = PredictaShapes.medium,
@@ -985,10 +984,10 @@ private fun TaskCard(
                         text = task.title,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
-                        color = if (task.status == TaskStatus.REASSIGNED) {
+                        color = if (task.status == DashboardTaskStatus.REASSIGNED) {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         } else MaterialTheme.colorScheme.primary,
-                        textDecoration = if (task.status == TaskStatus.REASSIGNED) {
+                        textDecoration = if (task.status == DashboardTaskStatus.REASSIGNED) {
                             TextDecoration.LineThrough
                         } else TextDecoration.None,
                     )

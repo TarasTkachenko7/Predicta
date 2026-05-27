@@ -2,6 +2,8 @@ package com.predicta.app.feature_tasks.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.predicta.app.core.error.AppResult
+import com.predicta.app.core.ui.toUiText
 import com.predicta.app.feature_employees.domain.model.Employee
 import com.predicta.app.feature_employees.domain.usecase.GetEmployeesUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,15 +58,17 @@ class TaskViewModel(
     private fun loadEmployees() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-            try {
-                val employees = getEmployees()
-                _state.update { it.copy(isLoading = false, employees = employees) }
-            } catch (e: Exception) {
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        error = e.message ?: "Failed to load employees.",
-                    )
+            when (val result = getEmployees()) {
+                is AppResult.Success -> {
+                    _state.update { it.copy(isLoading = false, employees = result.value) }
+                }
+                is AppResult.Failure -> {
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            error = result.error.toUiText(),
+                        )
+                    }
                 }
             }
         }

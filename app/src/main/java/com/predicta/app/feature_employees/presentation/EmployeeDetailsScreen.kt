@@ -46,7 +46,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.predicta.app.data.demo.DemoData
+import com.predicta.app.feature_dashboard.domain.model.DashboardSnapshot
 import com.predicta.app.ui.components.AnimatedNumberText
 import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.modifier.pressScale
@@ -71,9 +71,9 @@ fun TeamVelocityScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        viewModel.navigation.collect { action ->
+        viewModel.effects.collect { action ->
             when (action) {
-                is EmployeeNavAction.GoToEmployeeCard -> {
+                is EmployeeEffect.GoToEmployeeCard -> {
                     onNavigateToEmployeeCard(action.employeeId)
                 }
             }
@@ -306,7 +306,7 @@ private fun VelocityCard(
 
 @Composable
 private fun SummaryCard(
-    demo: DemoData,
+    demo: DashboardSnapshot,
     modifier: Modifier = Modifier,
 ) {
     Card(

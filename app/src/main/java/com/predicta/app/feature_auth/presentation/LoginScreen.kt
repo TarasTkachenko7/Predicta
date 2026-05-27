@@ -70,10 +70,14 @@ fun LoginScreen(
     val loginInteraction = remember { MutableInteractionSource() }
     val demoInteraction = remember { MutableInteractionSource() }
 
-    LaunchedEffect(state.isSuccess) {
-        if (state.isSuccess) {
-            viewModel.onEvent(AuthEvent.ResetSuccessState)
-            onNavigateToDashboard()
+    LaunchedEffect(Unit) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                AuthEffect.Authenticated -> {
+                    viewModel.onEvent(AuthEvent.ResetSuccessState)
+                    onNavigateToDashboard()
+                }
+            }
         }
     }
 

@@ -1,13 +1,13 @@
 package com.predicta.app.feature_dashboard.domain.usecase
 
-import com.predicta.app.data.demo.DemoData
-import com.predicta.app.data.demo.DemoStateManager
-import kotlinx.coroutines.flow.StateFlow
+import com.predicta.app.feature_dashboard.domain.model.DashboardSnapshot
+import com.predicta.app.feature_dashboard.domain.repository.DashboardRepository
+import kotlinx.coroutines.flow.Flow
 
 class GetDemoStateUseCase(
-    private val demoStateManager: DemoStateManager
+    private val repository: DashboardRepository,
 ) {
-    operator fun invoke(): StateFlow<DemoData> {
-        return demoStateManager.demoState
+    operator fun invoke(): Flow<DashboardSnapshot> {
+        return repository.observeSnapshot()
     }
 }
