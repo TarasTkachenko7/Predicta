@@ -48,10 +48,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.predicta.app.R
 import com.predicta.app.feature_employees.domain.model.Employee
 import com.predicta.app.ui.components.AnimatedNumberText
 import com.predicta.app.ui.modifier.liquidGlass
@@ -128,13 +130,13 @@ private fun TeamVelocityContent(
         ) {
             item {
                 Text(
-                    text = "Анализ темпа работы",
+                    text = stringResource(R.string.employee_details_title),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    text = "Данные из Predicta API",
+                    text = stringResource(R.string.employee_details_source),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp),
@@ -165,10 +167,6 @@ private fun TeamVelocityContent(
     }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Velocity Card — horizontal progress bar per employee
-// ──────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun VelocityCard(
     name: String,
@@ -185,8 +183,6 @@ private fun VelocityCard(
     val barColor = burnoutLevel.getStrokeColor()
     val cardBgColor = burnoutLevel.getBackgroundColor()
     val interactionSource = remember { MutableInteractionSource() }
-
-    // Animate progress
     var targetProgress by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(progress) { targetProgress = progress }
     val animatedProgress by animateFloatAsState(
@@ -251,11 +247,9 @@ private fun VelocityCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-
-                // Status badge
                 AnimatedNumberText(
                     value = done,
-                    suffix = " / $total",
+                    suffix = stringResource(R.string.employee_details_count_suffix, total),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                     ),
@@ -266,15 +260,13 @@ private fun VelocityCard(
 
                 Icon(
                     imageVector = Icons.Filled.ChevronRight,
-                    contentDescription = "Подробнее",
+                    contentDescription = stringResource(R.string.employee_details_more),
                     tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                     modifier = Modifier.size(24.dp),
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Horizontal velocity bar
             LinearProgressIndicator(
                 progress = { animatedProgress },
                 modifier = Modifier
@@ -287,10 +279,8 @@ private fun VelocityCard(
             )
 
             Spacer(modifier = Modifier.height(8.dp))
-
-            // Label under the bar
             Text(
-                text = if (isHealthy) "Темп: Отличный" else "Темп: Критическое отставание",
+                text = if (isHealthy) "Риск выгорания: низкий" else "Риск выгорания: высокий",
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Medium,
                 color = barColor,
@@ -338,10 +328,6 @@ private fun AvatarFallback(
     )
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Summary Card
-// ──────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun SummaryCard(
     employees: List<Employee>,
@@ -367,7 +353,7 @@ private fun SummaryCard(
                 .padding(20.dp),
         ) {
             Text(
-                text = "Общая статистика",
+                text = stringResource(R.string.employee_details_summary_title),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,
@@ -376,19 +362,19 @@ private fun SummaryCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             SummaryRow(
-                label = "Всего задач в спринте",
+                label = stringResource(R.string.employee_details_total),
                 value = "$total",
             )
             SummaryRow(
-                label = "Закрыто",
+                label = stringResource(R.string.employee_details_done),
                 value = "$done",
             )
             SummaryRow(
-                label = "Осталось",
+                label = stringResource(R.string.employee_details_left),
                 value = "${(total - done).coerceAtLeast(0)}",
             )
             SummaryRow(
-                label = "Перегружено",
+                label = stringResource(R.string.employee_details_overloaded),
                 value = "$overloaded",
                 valueColor = if (overloaded > 0) SemanticCritical else SemanticSuccess,
             )
@@ -426,4 +412,5 @@ private fun SummaryRow(
         )
     }
 }
+
 

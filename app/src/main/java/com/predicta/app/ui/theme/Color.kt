@@ -1,8 +1,6 @@
 package com.predicta.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
-
-// SDM Bank Design System Colors
 val PrimaryBlue = Color(0xFF012D5A)
 val PrimaryBlueLight = Color(0xFF1A4A7A)
 val PrimaryBlueDark = Color(0xFF001A3A)
@@ -23,8 +21,6 @@ val DividerColor = Color(0xFFE8E8E8)
 val ErrorRed = Color(0xFFD32F2F)
 val SuccessGreen = Color(0xFF2E7D32)
 val WarningAmber = Color(0xFFF9A825)
-
-// Semantic Color Palette
 val SemanticCritical = Color(0xFFE63946)
 val SemanticWarning = Color(0xFFF5A623)
 val SemanticSuccess = Color(0xFF2EA043)
@@ -59,3 +55,4 @@ enum class BurnoutLevel {
         }
     }
 }
+

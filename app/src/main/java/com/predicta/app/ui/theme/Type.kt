@@ -6,11 +6,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-/**
- * Predicta font family. Currently uses system default sans-serif.
- * Replace with a custom FontFamily (e.g., Inter) when font files are added
- * to res/font/.
- */
+
 val PredictaFontFamily = FontFamily.Default
 
 val PredictaTypography = Typography(
@@ -120,3 +116,4 @@ val PredictaTypography = Typography(
         letterSpacing = 0.5.sp,
     ),
 )
+

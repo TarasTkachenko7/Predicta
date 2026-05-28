@@ -2,7 +2,7 @@ package com.predicta.app.feature_dashboard.presentation
 
 import com.predicta.app.feature_dashboard.domain.model.DashboardSnapshot
 import com.predicta.app.feature_dashboard.domain.model.GlobalAlert
-import com.predicta.app.feature_dashboard.domain.model.TeamPace
+import com.predicta.app.core.ui.formatBackendText
 
 fun reduceDashboardSnapshot(
     currentState: DashboardState,
@@ -20,7 +20,7 @@ fun reduceDashboardSnapshot(
         sprintElapsedDays = snapshot.sprintElapsedDays,
         sprintTotalDays = snapshot.sprintTotalDays,
         hasBeenReassigned = snapshot.hasBeenReassigned,
-        teamPace = createTeamPace(snapshot),
+        teamPace = snapshot.teamPace,
         alerts = createDashboardAlerts(snapshot)
             .filterNot { alert -> alert.id in dismissedAlertIds },
     )
@@ -32,26 +32,19 @@ fun reduceDismissAlert(currentState: DashboardState, alertId: String): Dashboard
     )
 }
 
-private fun createTeamPace(snapshot: DashboardSnapshot): List<TeamPace> {
-    return listOf(
-        TeamPace(day = snapshot.primaryEmployeeName.ifBlank { "1" }, velocity = snapshot.primaryEmployeeDone.toFloat()),
-        TeamPace(day = snapshot.secondaryEmployeeName.ifBlank { "2" }, velocity = snapshot.secondaryEmployeeDone.toFloat()),
-    ).filter { it.day.isNotBlank() }
-}
-
 private fun createDashboardAlerts(snapshot: DashboardSnapshot): List<GlobalAlert> {
     return if (snapshot.isProjectDelayed) {
         listOfNotNull(
             GlobalAlert(
                 id = "alert_sprint_risk",
                 message = "${snapshot.sprintName}. Риск срыва дедлайна " +
-                    "${snapshot.delayTrack} на ${snapshot.delayDays} дня.",
+                    "${snapshot.delayTrack} на ${snapshot.delayDays} дня.".formatBackendText(),
                 severity = "high",
             ),
             snapshot.aiInsight.takeIf { it.isNotBlank() }?.let {
                 GlobalAlert(
                     id = "alert_ai_advice",
-                    message = it,
+                    message = it.formatBackendText(),
                     severity = "medium",
                 )
             },

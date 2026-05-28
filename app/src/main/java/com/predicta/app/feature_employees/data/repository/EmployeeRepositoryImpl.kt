@@ -14,6 +14,7 @@ class EmployeeRepositoryImpl(
     private val api: PredictaApi,
     private val apiCallExecutor: ApiCallExecutor,
 ) : EmployeeRepository {
+    private val employeeDetailsCache = mutableMapOf<String, EmployeeDetailsDto>()
 
     override suspend fun getEmployees(): AppResult<List<Employee>> {
         return when (val result = apiCallExecutor.execute { api.getTeamVelocity() }) {
@@ -25,7 +26,15 @@ class EmployeeRepositoryImpl(
     }
 
     override suspend fun getEmployee(id: String): AppResult<EmployeeDetailsDto> {
-        return apiCallExecutor.execute { api.getEmployee(id) }
+        employeeDetailsCache[id]?.let { return AppResult.Success(it) }
+
+        return when (val result = apiCallExecutor.execute { api.getEmployee(id) }) {
+            is AppResult.Success -> {
+                employeeDetailsCache[id] = result.value
+                result
+            }
+            is AppResult.Failure -> result
+        }
     }
 
     override suspend fun getEmployeeAnalytics(id: String): AppResult<EmployeeAnalyticsDto> {
@@ -50,19 +59,29 @@ class EmployeeRepositoryImpl(
 
     private suspend fun enrichEmployeesWithDetails(employees: List<Employee>): List<Employee> {
         return employees.map { employee ->
-            if (employee.id.isBlank()) {
+            val cachedDetails = employeeDetailsCache[employee.id]
+            if (cachedDetails != null) {
+                employee.withDetails(cachedDetails)
+            } else if (employee.id.isBlank()) {
                 employee
             } else {
                 when (val details = apiCallExecutor.execute { api.getEmployee(employee.id) }) {
-                    is AppResult.Success -> employee.copy(
-                        avatarUrl = details.value.avatarUrl ?: employee.avatarUrl,
-                        name = details.value.name ?: details.value.displayName ?: employee.name,
-                        role = details.value.role ?: details.value.position ?: employee.role,
-                    )
+                    is AppResult.Success -> {
+                        employeeDetailsCache[employee.id] = details.value
+                        employee.withDetails(details.value)
+                    }
                     is AppResult.Failure -> employee
                 }
             }
         }
+    }
+
+    private fun Employee.withDetails(details: EmployeeDetailsDto): Employee {
+        return copy(
+            avatarUrl = details.avatarUrl ?: avatarUrl,
+            name = details.name ?: details.displayName ?: name,
+            role = details.role ?: details.position ?: role,
+        )
     }
 
     private fun Health?.toBurnoutRisk(): Float {

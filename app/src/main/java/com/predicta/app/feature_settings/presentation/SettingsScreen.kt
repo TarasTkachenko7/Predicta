@@ -53,6 +53,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -113,22 +114,6 @@ fun SettingsScreen(
             )
         }
 
-        item {
-            ApiSettingsCard(
-                apiBaseUrl = state.apiBaseUrl,
-                onSave = { viewModel.onEvent(SettingsEvent.UpdateApiBaseUrl(it)) },
-                onReset = { viewModel.onEvent(SettingsEvent.ResetApiBaseUrl) },
-            )
-        }
-
-        item {
-            RuntimeStatusCard()
-        }
-
-        item {
-            AppInfoCard()
-        }
-
         item { Spacer(modifier = Modifier.height(8.dp)) }
     }
 }
@@ -145,7 +130,7 @@ private fun ApiSettingsCard(
     SettingsCard(modifier = modifier) {
         SectionTitle(
             icon = Icons.Outlined.Link,
-            title = "API",
+            title = stringResource(R.string.settings_api_title),
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -155,7 +140,7 @@ private fun ApiSettingsCard(
             onValueChange = { draftUrl = it },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            label = { Text("Base URL") },
+            label = { Text(stringResource(R.string.settings_base_url)) },
         )
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -169,14 +154,14 @@ private fun ApiSettingsCard(
                 modifier = Modifier.weight(1f),
                 shape = PredictaShapes.medium,
             ) {
-                Text("Сбросить")
+                Text(stringResource(R.string.settings_reset))
             }
             OutlinedButton(
                 onClick = { onSave(draftUrl) },
                 modifier = Modifier.weight(1f),
                 shape = PredictaShapes.medium,
             ) {
-                Text("Сохранить")
+                Text(stringResource(R.string.settings_save))
             }
         }
     }
@@ -200,7 +185,7 @@ private fun ProfileCard(
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
+    ) { uri -> 
         uri?.let {
             try {
                 context.contentResolver.takePersistableUriPermission(
@@ -216,11 +201,26 @@ private fun ProfileCard(
 
     val avatarInteractionSource = remember { MutableInteractionSource() }
     val nameInteractionSource = remember { MutableInteractionSource() }
+    val displayName = if (userName.isBlank()) {
+        stringResource(R.string.app_name)
+    } else {
+        userName
+    }
+    val displayEmail = if (email.isBlank()) {
+        stringResource(R.string.settings_default_email)
+    } else {
+        email
+    }
+    val displayRole = if (role.isBlank()) {
+        stringResource(R.string.settings_role_manager)
+    } else {
+        role.replaceFirstChar { it.uppercase() }
+    }
 
     SettingsCard(modifier = modifier) {
         SectionTitle(
             icon = Icons.Outlined.Person,
-            title = "Профиль",
+            title = stringResource(R.string.settings_profile_title),
         )
 
         Spacer(modifier = Modifier.height(14.dp))
@@ -251,14 +251,14 @@ private fun ProfileCard(
                 if (avatarUri != null) {
                     AsyncImage(
                         model = avatarUri,
-                        contentDescription = "Avatar",
+                        contentDescription = stringResource(R.string.settings_profile_title),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
                     Icon(
                         imageVector = Icons.Outlined.Person,
-                        contentDescription = "Default Avatar",
+                        contentDescription = stringResource(R.string.settings_profile_title),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(40.dp)
                     )
@@ -271,14 +271,14 @@ private fun ProfileCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = userName.ifBlank { "Predicta User" },
+                        text = displayName,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Icon(
                         imageVector = Icons.Outlined.Edit,
-                        contentDescription = "Edit Name",
+                        contentDescription = stringResource(R.string.settings_edit_name),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .size(18.dp)
@@ -293,13 +293,13 @@ private fun ProfileCard(
                     )
                 }
                 Text(
-                    text = email.ifBlank { "user@predicta.ai" },
+                    text = displayEmail,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp)
                 )
                 Text(
-                    text = role.ifBlank { "manager" }.replaceFirstChar { it.uppercase() },
+                    text = displayRole,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(top = 4.dp),
@@ -324,7 +324,7 @@ private fun ProfileCard(
             )
             Spacer(modifier = Modifier.size(8.dp))
             Text(
-                text = "Выйти из аккаунта",
+                text = stringResource(R.string.settings_logout),
                 fontWeight = FontWeight.SemiBold,
             )
         }
@@ -333,14 +333,14 @@ private fun ProfileCard(
             AlertDialog(
                 onDismissRequest = { showEditNameDialog = false },
                 title = {
-                    Text("Редактировать имя", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.settings_edit_name), fontWeight = FontWeight.Bold)
                 },
                 text = {
                     OutlinedTextField(
                         value = newName,
                         onValueChange = { newName = it },
                         singleLine = true,
-                        label = { Text("Имя") }
+                        label = { Text(stringResource(R.string.settings_name)) }
                     )
                 },
                 confirmButton = {
@@ -352,14 +352,14 @@ private fun ProfileCard(
                             showEditNameDialog = false
                         }
                     ) {
-                        Text("Сохранить", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.settings_save), fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
                     TextButton(
                         onClick = { showEditNameDialog = false }
                     ) {
-                        Text("Отмена")
+                        Text(stringResource(R.string.settings_cancel))
                     }
                 },
                 shape = PredictaShapes.medium,
@@ -378,7 +378,7 @@ private fun ThemeSettingsCard(
     SettingsCard(modifier = modifier) {
         SectionTitle(
             icon = Icons.Outlined.Settings,
-            title = "Оформление",
+            title = stringResource(R.string.settings_theme_title),
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -441,15 +441,10 @@ private fun ThemeOptionRow(
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = mode.title,
+                text = stringResource(mode.titleRes),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = mode.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -471,22 +466,22 @@ private fun RuntimeStatusCard(
     SettingsCard(modifier = modifier) {
         SectionTitle(
             icon = Icons.Outlined.Info,
-            title = "Текущий режим",
+            title = stringResource(R.string.settings_current_mode_title),
         )
 
         Spacer(modifier = Modifier.height(14.dp))
 
         StatusRow(
             icon = Icons.Outlined.CloudQueue,
-            title = "Синхронизация",
-            value = "Готово",
-            description = "Данные загружаются из Predicta API",
+            title = stringResource(R.string.settings_sync_title),
+            value = stringResource(R.string.settings_sync_done),
+            description = stringResource(R.string.settings_sync_description),
         )
         StatusRow(
             icon = Icons.Outlined.AutoAwesome,
-            title = "Predicta AI",
-            value = "Активен",
-            description = "Аналитика встроена в клиентский слой приложения",
+            title = stringResource(R.string.settings_ai_title),
+            value = stringResource(R.string.settings_ai_active),
+            description = stringResource(R.string.settings_ai_description),
         )
     }
 }
@@ -498,13 +493,13 @@ private fun AppInfoCard(
     SettingsCard(modifier = modifier) {
         SectionTitle(
             icon = Icons.Filled.CheckCircle,
-            title = "Готовность",
+            title = stringResource(R.string.settings_readiness_title),
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "Приложение подключено к Predicta API. Адрес backend можно обновить выше при смене ngrok.",
+            text = stringResource(R.string.settings_readiness_description),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

@@ -28,13 +28,9 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val appModule = module {
-
-    // ── App Runtime ─────────────────────────────────────────────────────
     single { NetworkMonitor(androidContext()) }
     single { UserSessionManager(androidContext()) }
     viewModel { AppViewModel(networkMonitor = get(), sessionManager = get()) }
-
-    // ── Auth Feature ────────────────────────────────────────────────────
     single<AuthRepository> {
         AuthRepositoryImpl(
             api = get(),
@@ -51,22 +47,14 @@ val appModule = module {
             sessionManager = get()
         ) 
     }
-
-    // ── App Settings ────────────────────────────────────────────────────
     single { AppSettingsRepository(androidContext()) }
-
-    // ── feature_dashboard ───────────────────────────────────────────────
     single<DashboardRepository> { DashboardRepositoryImpl(api = get(), apiCallExecutor = get()) }
     factory { GetDashboardSnapshotUseCase(repository = get()) }
     viewModel { DashboardViewModel(getDashboardSnapshotUseCase = get()) }
-
-    // ── feature_employees (Team Velocity + Employee Card) ───────────────
     single<EmployeeRepository> { EmployeeRepositoryImpl(api = get(), apiCallExecutor = get()) }
     factory { GetEmployeesUseCase(repository = get()) }
     viewModel { EmployeeViewModel(getEmployeesUseCase = get()) }
     viewModel { EmployeeCardViewModel(savedStateHandle = get(), employeeRepository = get()) }
-
-    // ── feature_tasks ───────────────────────────────────────────────────
     factory { ReassignTaskUseCase(repository = get()) }
     viewModel { TaskViewModel(getEmployees = get()) }
     viewModel {
@@ -76,8 +64,6 @@ val appModule = module {
             reassignTaskUseCase = get(),
         )
     }
-
-    // ── feature_settings ────────────────────────────────────────────────
     viewModel {
         SettingsViewModel(
             settingsRepository = get(),
@@ -86,3 +72,4 @@ val appModule = module {
         )
     }
 }
+

@@ -9,6 +9,7 @@ import com.predicta.app.data.remote.dto.EmployeeDetailsDto
 import com.predicta.app.data.remote.dto.Health
 import com.predicta.app.data.remote.dto.TaskDto
 import com.predicta.app.data.remote.dto.TaskStatus
+import com.predicta.app.core.ui.formatBackendText
 import com.predicta.app.feature_dashboard.domain.model.DashboardTask
 import com.predicta.app.feature_dashboard.domain.model.DashboardTaskStatus
 import com.predicta.app.feature_employees.domain.repository.EmployeeRepository
@@ -86,8 +87,8 @@ class EmployeeCardViewModel(
             isHealthy = resolvedHealth != Health.bad,
             predictedDays = predicted,
             deadlineDays = deadline,
-            aiInsight = analytics?.aiInsight ?: aiInsight.orEmpty(),
-            riskFactors = analytics?.riskFactors.orEmpty(),
+            aiInsight = (analytics?.aiInsight ?: aiInsight.orEmpty()).formatBackendText(),
+            riskFactors = analytics?.riskFactors.orEmpty().map { it.formatBackendText() },
             tasks = (analytics?.tasks?.takeIf { it.isNotEmpty() } ?: tasks).map { it.toDomain(employeeId) },
             isDeepWorkActive = false,
         )

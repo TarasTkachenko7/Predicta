@@ -1,24 +1,27 @@
 package com.predicta.app.feature_settings.domain.model
 
+import androidx.annotation.StringRes
+import com.predicta.app.R
+
 enum class ThemeMode(
     val storageValue: String,
-    val title: String,
-    val description: String,
+    @StringRes val titleRes: Int,
+    @StringRes val descriptionRes: Int,
 ) {
     SYSTEM(
         storageValue = "system",
-        title = "Как в системе",
-        description = "Автоматически повторяет тему устройства",
+        titleRes = R.string.theme_mode_system_title,
+        descriptionRes = R.string.theme_mode_system_description,
     ),
     LIGHT(
         storageValue = "light",
-        title = "Светлая",
-        description = "Всегда использовать светлый интерфейс",
+        titleRes = R.string.theme_mode_light_title,
+        descriptionRes = R.string.theme_mode_light_description,
     ),
     DARK(
         storageValue = "dark",
-        title = "Темная",
-        description = "Всегда использовать темный интерфейс",
+        titleRes = R.string.theme_mode_dark_title,
+        descriptionRes = R.string.theme_mode_dark_description,
     );
 
     companion object {

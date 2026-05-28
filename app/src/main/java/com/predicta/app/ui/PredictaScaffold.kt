@@ -33,6 +33,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -64,6 +65,7 @@ import com.predicta.app.feature_settings.presentation.SettingsScreen
 import com.predicta.app.feature_tasks.presentation.TaskReassignmentScreen
 import com.predicta.app.navigation.Screen
 import com.predicta.app.ui.modifier.liquidGlass
+import com.predicta.app.R
 import com.predicta.app.ui.theme.SemanticSuccess
 import org.koin.androidx.compose.koinViewModel
 
@@ -87,7 +89,6 @@ fun PredictaScaffold(
         return
     }
 
-    // Only show bottom bar on top-level screens
     val showBottomBar = currentRoute in Screen.bottomNavItems.map { it.route }
     val showTopBar = currentRoute !in listOf(
         Screen.Login.route,
@@ -146,7 +147,6 @@ fun PredictaScaffold(
                 )
             }
 
-            // Auth Flow
             composable(Screen.Login.route) {
                 LoginScreen(
                     onNavigateToDashboard = {
@@ -157,7 +157,6 @@ fun PredictaScaffold(
                 )
             }
 
-            // Экран 1: Дашборд (Здоровье проекта)
             composable(Screen.Dashboard.route) {
                 DashboardScreen(
                     onNavigateToTeamVelocity = {
@@ -178,7 +177,6 @@ fun PredictaScaffold(
                 )
             }
 
-            // Экран 2: Анализ темпа работы (Команда)
             composable(Screen.TeamVelocity.route) {
                 TeamVelocityScreen(
                     onNavigateToEmployeeCard = { employeeId ->
@@ -190,7 +188,6 @@ fun PredictaScaffold(
                 )
             }
 
-            // Экран настроек
             composable(Screen.Settings.route) {
                 SettingsScreen(
                     onLogout = {
@@ -205,7 +202,6 @@ fun PredictaScaffold(
                 )
             }
 
-            // Экран 3: Карточка сотрудника & AI-инсайты
             composable(
                 route = Screen.EmployeeCard.route,
                 arguments = listOf(
@@ -225,7 +221,6 @@ fun PredictaScaffold(
                 )
             }
 
-            // Экран 4: Перераспределение задачи
             composable(
                 route = Screen.TaskReassignment.route,
                 arguments = listOf(
@@ -237,7 +232,6 @@ fun PredictaScaffold(
                     taskId = taskId,
                     onNavigateBack = { navController.popBackStack() },
                     onReassignmentComplete = {
-                        // Navigate back to Dashboard, clearing the stack
                         navController.navigate(Screen.Dashboard.route) {
                             popUpTo(Screen.Dashboard.route) { inclusive = true }
                             launchSingleTop = true
@@ -250,10 +244,6 @@ fun PredictaScaffold(
     }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Top App Bar
-// ──────────────────────────────────────────────────────────────────────────────
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PredictaTopBar() {
@@ -264,7 +254,7 @@ private fun PredictaTopBar() {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "Predicta",
+                    text = stringResource(R.string.app_name),
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = (-0.5).sp,
@@ -293,9 +283,6 @@ private fun PredictaTopBar() {
     )
 }
 
-/**
- * A small pulsing green dot indicating that the AI assistant is active.
- */
 @Composable
 private fun AiStatusIndicator() {
     val infiniteTransition = rememberInfiniteTransition(label = "ai_pulse")
@@ -321,16 +308,12 @@ private fun AiStatusIndicator() {
                 .background(SemanticSuccess),
         )
         Text(
-            text = "AI Active",
+            text = stringResource(R.string.ai_active),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Bottom Navigation Bar
-// ──────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun PredictaBottomBar(
@@ -363,17 +346,12 @@ private fun PredictaBottomBar(
             NavigationBarItem(
                 selected = isSelected,
                 onClick = {
-                    // CRITICAL FIX: DO NOT use 'if (isSelected) return' or 'if (selected) return'.
-                    // We ONLY skip navigation if the user is ALREADY exactly on the root destination of this tab.
                     if (!isExactlyOnRootOfThisTab) {
                         navController.navigate(item.route) {
-                            // Pop up to the start destination of the graph to avoid building up a large stack
                             popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = true
                             }
-                            // Avoid multiple copies of the same destination when reselecting the same item
                             launchSingleTop = true
-                            // Restore state when reselecting a previously selected item
                             restoreState = true
                         }
                     }
@@ -381,12 +359,12 @@ private fun PredictaBottomBar(
                 icon = {
                     Icon(
                         imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
-                        contentDescription = item.label,
+                        contentDescription = stringResource(item.labelRes),
                     )
                 },
                 label = {
                     Text(
-                        text = item.label,
+                        text = stringResource(item.labelRes),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                     )

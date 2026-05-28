@@ -3,9 +3,7 @@ package com.predicta.app.feature_dashboard.presentation
 import com.predicta.app.feature_dashboard.domain.model.GlobalAlert
 import com.predicta.app.feature_dashboard.domain.model.TeamPace
 
-/**
- * Immutable UI state for the Dashboard screen (Sprint Health).
- */
+
 data class DashboardState(
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
@@ -21,3 +19,4 @@ data class DashboardState(
     val alerts: List<GlobalAlert> = emptyList(),
     val error: String? = null,
 )
+

@@ -16,9 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * ViewModel for the Dashboard screen.
- */
+
 class DashboardViewModel(
     private val getDashboardSnapshotUseCase: GetDashboardSnapshotUseCase,
 ) : ViewModel() {
@@ -102,3 +100,4 @@ sealed interface DashboardEffect : UiEffect {
     data object GoToTeamVelocity : DashboardEffect
     data class ResolveAlert(val targetId: String) : DashboardEffect
 }
+

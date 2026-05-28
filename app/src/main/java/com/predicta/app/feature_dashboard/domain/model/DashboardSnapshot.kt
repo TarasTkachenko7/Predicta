@@ -20,6 +20,7 @@ data class DashboardSnapshot(
     val secondaryEmployeeDone: Int,
     val secondaryEmployeeTotal: Int,
     val secondaryEmployeeTasks: List<DashboardTask>,
+    val teamPace: List<TeamPace>,
     val aiInsight: String,
     val predictedDays: Int,
     val deadlineDays: Int,

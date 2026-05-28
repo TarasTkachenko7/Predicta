@@ -36,17 +36,7 @@ import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/**
- * Applies a performant frosted "liquid glass" surface to a container.
- *
- * Important platform note: Jetpack Compose does not expose a generic backdrop-filter API that can
- * blur arbitrary pixels already drawn behind this composable. On Android 12+ this modifier uses
- * native [Modifier.blur] on the current layer; for text-heavy containers, apply this modifier to a
- * background Box behind the content if you want children to stay perfectly sharp. On older APIs the
- * modifier gracefully falls back to a stronger matte tint, animated liquid highlight, and luminous
- * border. If real pre-Android-12 backdrop blur is mandatory, capture/pre-blur a bitmap behind the
- * surface off the main thread, or wire in a dedicated backdrop library.
- */
+
 fun Modifier.liquidGlass(
     shape: Shape = RoundedCornerShape(24.dp),
     blurRadius: Dp = 18.dp,
@@ -212,3 +202,4 @@ private fun DrawScope.drawLiquidOutline(
         )
     }
 }
+
