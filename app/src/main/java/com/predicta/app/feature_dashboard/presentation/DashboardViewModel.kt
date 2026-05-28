@@ -2,9 +2,11 @@ package com.predicta.app.feature_dashboard.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.predicta.app.core.error.AppResult
 import com.predicta.app.core.ui.UiEffect
+import com.predicta.app.core.ui.toUiText
 import com.predicta.app.feature_dashboard.domain.model.DashboardSnapshot
-import com.predicta.app.feature_dashboard.domain.usecase.GetDemoStateUseCase
+import com.predicta.app.feature_dashboard.domain.usecase.GetDashboardSnapshotUseCase
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -14,11 +16,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * ViewModel for the Dashboard screen.
- */
+
 class DashboardViewModel(
-    private val getDemoStateUseCase: GetDemoStateUseCase,
+    private val getDashboardSnapshotUseCase: GetDashboardSnapshotUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DashboardState())
@@ -31,12 +31,12 @@ class DashboardViewModel(
     private var latestSnapshot: DashboardSnapshot? = null
 
     init {
-        observeDemoState()
+        loadDashboard()
     }
 
     fun onEvent(event: DashboardEvent) {
         when (event) {
-            is DashboardEvent.Refresh -> latestSnapshot?.let(::applyDemoState)
+            is DashboardEvent.Refresh -> loadDashboard()
             is DashboardEvent.DismissAlert -> dismissAlert(event.alertId)
             is DashboardEvent.AlertClicked -> handleAlertClicked(event.targetId)
             is DashboardEvent.NavigateToTeamVelocity -> {
@@ -47,16 +47,34 @@ class DashboardViewModel(
         }
     }
 
-    private fun observeDemoState() {
+    private fun loadDashboard() {
         viewModelScope.launch {
-            getDemoStateUseCase().collect { demo ->
-                latestSnapshot = demo
-                applyDemoState(demo)
+            _state.update { current ->
+                if (current.sprintName.isBlank() && current.teamPace.isEmpty()) {
+                    current.copy(isLoading = true, isRefreshing = false, error = null)
+                } else {
+                    current.copy(isRefreshing = true, error = null)
+                }
+            }
+            when (val result = getDashboardSnapshotUseCase()) {
+                is AppResult.Success -> {
+                    latestSnapshot = result.value
+                    applyDashboardSnapshot(result.value)
+                }
+                is AppResult.Failure -> {
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            isRefreshing = false,
+                            error = result.error.toUiText(),
+                        )
+                    }
+                }
             }
         }
     }
 
-    private fun applyDemoState(snapshot: DashboardSnapshot) {
+    private fun applyDashboardSnapshot(snapshot: DashboardSnapshot) {
         _state.update { current ->
             reduceDashboardSnapshot(
                 currentState = current,
@@ -82,3 +100,4 @@ sealed interface DashboardEffect : UiEffect {
     data object GoToTeamVelocity : DashboardEffect
     data class ResolveAlert(val targetId: String) : DashboardEffect
 }
+

@@ -3,9 +3,10 @@ package com.predicta.app.feature_tasks.presentation
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.predicta.app.core.ui.UiEffect
-import com.predicta.app.feature_dashboard.domain.model.DashboardTaskStatus
-import com.predicta.app.feature_dashboard.domain.usecase.GetDemoStateUseCase
+import com.predicta.app.core.error.AppResult
+import com.predicta.app.data.remote.dto.TaskStatus
+import com.predicta.app.feature_employees.domain.model.Employee
+import com.predicta.app.feature_employees.domain.repository.EmployeeRepository
 import com.predicta.app.feature_tasks.domain.usecase.ReassignTaskUseCase
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +19,7 @@ import kotlinx.coroutines.launch
 
 class TaskReassignmentViewModel(
     savedStateHandle: SavedStateHandle,
-    private val getDemoStateUseCase: GetDemoStateUseCase,
+    private val employeeRepository: EmployeeRepository,
     private val reassignTaskUseCase: ReassignTaskUseCase,
 ) : ViewModel() {
 
@@ -31,38 +32,60 @@ class TaskReassignmentViewModel(
     val effects: SharedFlow<TaskReassignmentEffect> = _effects.asSharedFlow()
 
     init {
+        loadTaskContext()
+    }
+
+    private fun loadTaskContext() {
         viewModelScope.launch {
-            getDemoStateUseCase().collect { demo ->
-                val task = demo.pavelTasks.find { it.id == taskId }
-                if (task != null) {
-                    val canReassign = task.status == DashboardTaskStatus.IN_PROGRESS ||
-                        task.status == DashboardTaskStatus.TODO
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            taskId = task.id,
-                            taskTitle = task.title,
-                            fromName = demo.pavelName,
-                            toName = demo.olegName,
-                            toRole = demo.olegRole,
-                            toDone = demo.olegDone,
-                            toTotal = demo.olegTotal,
-                            canReassign = canReassign,
-                        )
-                    }
-                } else {
+            val employees = when (val result = employeeRepository.getEmployees()) {
+                is AppResult.Success -> result.value
+                is AppResult.Failure -> {
                     _state.update { it.copy(isLoading = false, canReassign = false) }
+                    return@launch
                 }
+            }
+
+            var taskTitle = ""
+            var fromEmployee: Employee? = null
+            var canReassign = false
+
+            employees.forEach { employee ->
+                val details = when (val result = employeeRepository.getEmployee(employee.id)) {
+                    is AppResult.Success -> result.value
+                    is AppResult.Failure -> null
+                }
+                val task = details?.tasks?.firstOrNull { it.id == taskId || it.key == taskId }
+                if (task != null) {
+                    taskTitle = task.title ?: task.summary ?: task.description ?: taskId
+                    fromEmployee = employee
+                    canReassign = task.status == TaskStatus.todo || task.status == TaskStatus.in_progress
+                }
+            }
+
+            val recommended = employees
+                .filter { it.id != fromEmployee?.id }
+                .minByOrNull { it.burnoutRisk }
+
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    taskId = if (taskTitle.isNotBlank()) taskId else "",
+                    taskTitle = taskTitle,
+                    fromName = fromEmployee?.name.orEmpty(),
+                    toId = recommended?.id.orEmpty(),
+                    toName = recommended?.name.orEmpty(),
+                    toRole = recommended?.role.orEmpty(),
+                    toDone = recommended?.doneCount ?: 0,
+                    toTotal = recommended?.totalCount ?: 0,
+                    canReassign = canReassign && recommended != null,
+                )
             }
         }
     }
 
     fun onEvent(event: TaskReassignmentEvent) {
         when (event) {
-            is TaskReassignmentEvent.ConfirmReassignment -> {
-                reassignTaskUseCase(taskId)
-                _state.update { it.copy(isReassigned = true) }
-            }
+            is TaskReassignmentEvent.ConfirmReassignment -> confirmReassignment()
             is TaskReassignmentEvent.CompleteReassignment -> {
                 viewModelScope.launch {
                     _effects.emit(TaskReassignmentEffect.GoToDashboard)
@@ -70,8 +93,20 @@ class TaskReassignmentViewModel(
             }
         }
     }
+
+    private fun confirmReassignment() {
+        viewModelScope.launch {
+            val current = _state.value
+            if (current.toId.isBlank()) return@launch
+
+            when (reassignTaskUseCase(taskId = taskId, newExecutorId = current.toId)) {
+                is AppResult.Success -> _state.update { it.copy(isReassigned = true) }
+                is AppResult.Failure -> _state.update { it.copy(canReassign = false) }
+            }
+        }
+    }
 }
 
-sealed interface TaskReassignmentEffect : UiEffect {
+sealed interface TaskReassignmentEffect {
     data object GoToDashboard : TaskReassignmentEffect
 }

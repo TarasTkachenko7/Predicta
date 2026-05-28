@@ -2,9 +2,7 @@ package com.predicta.app.feature_tasks.presentation
 
 import com.predicta.app.feature_employees.domain.model.Employee
 
-/**
- * Immutable UI state for the Task Assignment screen.
- */
+
 data class TaskState(
     val isLoading: Boolean = true,
     val taskDescription: String = "",
@@ -14,3 +12,4 @@ data class TaskState(
     val aiRecommendation: String? = null,
     val error: String? = null,
 )
+

@@ -2,7 +2,7 @@ package com.predicta.app.feature_dashboard.presentation
 
 import com.predicta.app.feature_dashboard.domain.model.DashboardSnapshot
 import com.predicta.app.feature_dashboard.domain.model.GlobalAlert
-import com.predicta.app.feature_dashboard.domain.model.TeamPace
+import com.predicta.app.core.ui.formatBackendText
 
 fun reduceDashboardSnapshot(
     currentState: DashboardState,
@@ -11,6 +11,7 @@ fun reduceDashboardSnapshot(
 ): DashboardState {
     return currentState.copy(
         isLoading = false,
+        isRefreshing = false,
         sprintName = snapshot.sprintName,
         isProjectDelayed = snapshot.isProjectDelayed,
         delayDays = snapshot.delayDays,
@@ -19,7 +20,7 @@ fun reduceDashboardSnapshot(
         sprintElapsedDays = snapshot.sprintElapsedDays,
         sprintTotalDays = snapshot.sprintTotalDays,
         hasBeenReassigned = snapshot.hasBeenReassigned,
-        teamPace = createTeamPace(snapshot.isProjectDelayed),
+        teamPace = snapshot.teamPace,
         alerts = createDashboardAlerts(snapshot)
             .filterNot { alert -> alert.id in dismissedAlertIds },
     )
@@ -31,56 +32,24 @@ fun reduceDismissAlert(currentState: DashboardState, alertId: String): Dashboard
     )
 }
 
-private fun createTeamPace(isDelayed: Boolean): List<TeamPace> {
-    return if (isDelayed) {
-        listOf(
-            TeamPace(day = "Пн", velocity = 8f),
-            TeamPace(day = "Вт", velocity = 12f),
-            TeamPace(day = "Ср", velocity = 7f),
-            TeamPace(day = "Чт", velocity = 5f),
-            TeamPace(day = "Пт", velocity = 4f),
-            TeamPace(day = "Сб", velocity = 3f),
-            TeamPace(day = "Вс", velocity = 2f),
-        )
-    } else {
-        listOf(
-            TeamPace(day = "Пн", velocity = 8f),
-            TeamPace(day = "Вт", velocity = 12f),
-            TeamPace(day = "Ср", velocity = 7f),
-            TeamPace(day = "Чт", velocity = 5f),
-            TeamPace(day = "Пт", velocity = 9f),
-            TeamPace(day = "Сб", velocity = 11f),
-            TeamPace(day = "Вс", velocity = 14f),
-        )
-    }
-}
-
 private fun createDashboardAlerts(snapshot: DashboardSnapshot): List<GlobalAlert> {
     return if (snapshot.isProjectDelayed) {
-        listOf(
+        listOfNotNull(
             GlobalAlert(
                 id = "alert_sprint_risk",
                 message = "${snapshot.sprintName}. Риск срыва дедлайна " +
-                    "${snapshot.delayTrack} на ${snapshot.delayDays} дня.",
+                    "${snapshot.delayTrack} на ${snapshot.delayDays} дня.".formatBackendText(),
                 severity = "high",
-                triggerSource = "GitHub: 3 ночных коммита",
             ),
-            GlobalAlert(
-                id = "alert_pavel_burnout",
-                message = "Критический риск выгорания: ${snapshot.pavelName} " +
-                    "закрыл только ${snapshot.pavelDone} из ${snapshot.pavelTotal} задач.",
-                severity = "high",
-                triggerSource = "Calendar: 6 часов созвонов",
-            ),
+            snapshot.aiInsight.takeIf { it.isNotBlank() }?.let {
+                GlobalAlert(
+                    id = "alert_ai_advice",
+                    message = it.formatBackendText(),
+                    severity = "medium",
+                )
+            },
         )
     } else {
-        listOf(
-            GlobalAlert(
-                id = "alert_resolved",
-                message = "Задача перенаправлена на ${snapshot.olegName}. " +
-                    "Новый прогноз проекта: Сдача вовремя.",
-                severity = "success",
-            ),
-        )
+        emptyList()
     }
 }

@@ -37,30 +37,27 @@ private val PredictaLightColorScheme = lightColorScheme(
 )
 
 private val PredictaDarkColorScheme = darkColorScheme(
-    primary = Color(0xFF8FC7FF),
-    onPrimary = Color(0xFF00294F),
-    primaryContainer = Color(0xFF0D3A67),
-    onPrimaryContainer = Color(0xFFD7E9FF),
-    secondary = Color(0xFFC7C9C8),
-    onSecondary = Color(0xFF2F3130),
-    secondaryContainer = Color(0xFF3F4448),
-    onSecondaryContainer = Color(0xFFE1E3E2),
-    background = Color(0xFF0E1116),
-    onBackground = Color(0xFFE7EAEE),
-    surface = Color(0xFF171B22),
-    onSurface = Color(0xFFE7EAEE),
-    surfaceVariant = Color(0xFF222832),
-    onSurfaceVariant = Color(0xFFB8C0CC),
+    primary = Color(0xFF6CC4FF),
+    onPrimary = Color(0xFF00243F),
+    primaryContainer = Color(0xFF0C4B80),
+    onPrimaryContainer = Color(0xFFE2F1FF),
+    secondary = Color(0xFFD2E2F0),
+    onSecondary = Color(0xFF24313D),
+    secondaryContainer = Color(0xFF334355),
+    onSecondaryContainer = Color(0xFFE8F2FB),
+    background = Color(0xFF080C12),
+    onBackground = Color(0xFFF0F5FA),
+    surface = Color(0xFF111823),
+    onSurface = Color(0xFFF0F5FA),
+    surfaceVariant = Color(0xFF1A2430),
+    onSurfaceVariant = Color(0xFFC2D2E0),
     error = SemanticCritical,
     onError = TextOnPrimary,
-    outline = Color(0xFF3A4350),
-    outlineVariant = Color(0xFF2A303A),
+    outline = Color(0xFF536578),
+    outlineVariant = Color(0xFF2D3946),
 )
 
-/**
- * Custom shape definitions for the SDM Bank Design System.
- * iOS-like modernism aesthetic: rounded corners at 16dp and 24dp.
- */
+
 object PredictaShapes {
     val medium = RoundedCornerShape(16.dp)
     val large = RoundedCornerShape(24.dp)
@@ -93,3 +90,4 @@ fun PredictaTheme(
         content = content,
     )
 }
+

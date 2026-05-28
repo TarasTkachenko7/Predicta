@@ -7,7 +7,21 @@ import com.predicta.app.feature_auth.domain.repository.AuthRepository
 class RegisterUseCase(
     private val repository: AuthRepository
 ) {
-    suspend operator fun invoke(email: String, password: String, name: String): AppResult<User> {
-        return repository.register(email, password, name)
+    suspend operator fun invoke(
+        email: String,
+        password: String,
+        firstName: String,
+        lastName: String,
+        telegramNick: String,
+        phone: String,
+    ): AppResult<User> {
+        return repository.register(
+            email = email,
+            password = password,
+            firstName = firstName,
+            lastName = lastName,
+            telegramNick = telegramNick,
+            phone = phone,
+        )
     }
 }

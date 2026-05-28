@@ -1,26 +1,11 @@
 package com.predicta.app.feature_auth.presentation
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,7 +27,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -66,21 +50,17 @@ import com.predicta.app.R
 import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.modifier.pressScale
 import com.predicta.app.ui.theme.PredictaShapes
-import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun LoginScreen(
     onNavigateToDashboard: () -> Unit,
-    onNavigateToRegister: () -> Unit,
-    onNavigateToForgotPassword: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AuthViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var passwordVisible by remember { mutableStateOf(false) }
     val loginInteraction = remember { MutableInteractionSource() }
-    val demoInteraction = remember { MutableInteractionSource() }
 
     LaunchedEffect(Unit) {
         viewModel.effects.collect { effect ->
@@ -114,11 +94,8 @@ fun LoginScreen(
             state = state,
             passwordVisible = passwordVisible,
             onPasswordVisibilityChanged = { passwordVisible = it },
-            onNavigateToRegister = onNavigateToRegister,
-            onNavigateToForgotPassword = onNavigateToForgotPassword,
             onEvent = viewModel::onEvent,
             loginInteraction = loginInteraction,
-            demoInteraction = demoInteraction,
             modifier = Modifier.padding(24.dp)
         )
     }
@@ -129,11 +106,8 @@ private fun LoginFormCard(
     state: AuthState,
     passwordVisible: Boolean,
     onPasswordVisibilityChanged: (Boolean) -> Unit,
-    onNavigateToRegister: () -> Unit,
-    onNavigateToForgotPassword: () -> Unit,
     onEvent: (AuthEvent) -> Unit,
     loginInteraction: MutableInteractionSource,
-    demoInteraction: MutableInteractionSource,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -260,57 +234,6 @@ private fun LoginFormCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
-
-            OutlinedButton(
-                onClick = {
-                    onEvent(AuthEvent.LoginDemoSubmit)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp)
-                    .pressScale(demoInteraction),
-                shape = PredictaShapes.medium,
-                interactionSource = demoInteraction,
-                enabled = !state.isLoading,
-            ) {
-                Text(
-                    text = "Войти в демо",
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Row(
-                modifier = Modifier
-                    .clickable(onClick = onNavigateToRegister)
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Нет аккаунта? ",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Normal,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = "Зарегистрироваться",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-
-            TextButton(onClick = onNavigateToForgotPassword) {
-                Text(
-                    text = "Забыли пароль?",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
         }
     }
 }
-
-private const val LOGIN_INTRO_DURATION_MS = 1_850L

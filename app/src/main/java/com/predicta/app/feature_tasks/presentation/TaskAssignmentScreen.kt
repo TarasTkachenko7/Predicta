@@ -115,7 +115,6 @@ fun TaskReassignmentScreen(
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // ── Back button + header ────────────────────────────────────────
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onNavigateBack) {
@@ -134,8 +133,6 @@ fun TaskReassignmentScreen(
                 )
             }
         }
-
-        // ── Task info card ──────────────────────────────────────────────
         item {
             Card(
                 shape = PredictaShapes.medium,
@@ -167,16 +164,12 @@ fun TaskReassignmentScreen(
                 }
             }
         }
-
-        // ── Transfer visualization ──────────────────────────────────────
         item {
             TransferVisualization(
                 fromName = state.fromName,
                 toName = state.toName,
             )
         }
-
-        // ── Recommended assignee ────────────────────────────────────────
         item {
             RecommendedAssigneeCard(
                 name = state.toName,
@@ -185,8 +178,6 @@ fun TaskReassignmentScreen(
                 total = state.toTotal,
             )
         }
-
-        // ── Confirm button or Success state ─────────────────────────────
         item {
             if (!state.canReassign && !state.isReassigned) {
                 Text(
@@ -233,10 +224,6 @@ fun TaskReassignmentScreen(
     }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Transfer Visualization (From → To)
-// ──────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun TransferVisualization(
     fromName: String,
@@ -248,7 +235,6 @@ private fun TransferVisualization(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // From
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box(
                 modifier = Modifier
@@ -277,16 +263,12 @@ private fun TransferVisualization(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-
-        // Arrow
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(32.dp),
         )
-
-        // To
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box(
                 modifier = Modifier
@@ -317,10 +299,6 @@ private fun TransferVisualization(
         }
     }
 }
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Recommended Assignee Card
-// ──────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun RecommendedAssigneeCard(
@@ -423,10 +401,6 @@ private fun RecommendedAssigneeCard(
     }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Success Card
-// ──────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun SuccessCard(
     onGoToDashboard: () -> Unit,
@@ -509,3 +483,4 @@ private fun SuccessCard(
         }
     }
 }
+

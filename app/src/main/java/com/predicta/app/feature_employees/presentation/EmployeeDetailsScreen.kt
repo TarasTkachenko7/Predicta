@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -28,10 +29,12 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,10 +46,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.predicta.app.feature_dashboard.domain.model.DashboardSnapshot
+import coil.compose.AsyncImage
+import com.predicta.app.R
+import com.predicta.app.feature_employees.domain.model.Employee
 import com.predicta.app.ui.components.AnimatedNumberText
 import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.modifier.pressScale
@@ -87,13 +95,14 @@ fun TeamVelocityScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TeamVelocityContent(
     state: EmployeeState,
     onEvent: (EmployeeEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (state.isLoading || state.demoData == null) {
+    if (state.isLoading) {
         Box(
             modifier = modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
@@ -107,66 +116,56 @@ private fun TeamVelocityContent(
         return
     }
 
-    val demo = state.demoData
-
-    LazyColumn(
+    PullToRefreshBox(
+        isRefreshing = state.isRefreshing,
+        onRefresh = { onEvent(EmployeeEvent.Refresh) },
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item {
-            Text(
-                text = "Анализ темпа работы",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = "Бэкенд-команда · ${demo.sprintName}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-        }
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            item {
+                Text(
+                    text = stringResource(R.string.employee_details_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = stringResource(R.string.employee_details_source),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
 
-        // ── Oleg's card ─────────────────────────────────────────────────
-        item {
-            VelocityCard(
-                name = demo.olegName,
-                role = demo.olegRole,
-                done = demo.olegDone,
-                total = demo.olegTotal,
-                isHealthy = true,
-                onClick = { onEvent(EmployeeEvent.SelectEmployee(demo.olegId)) },
-            )
-        }
+            items(
+                items = state.employees,
+                key = { it.id },
+            ) { employee ->
+                VelocityCard(
+                    name = employee.name,
+                    role = employee.role,
+                    done = employee.doneCount,
+                    total = employee.totalCount,
+                    isHealthy = employee.burnoutRisk < 0.7f,
+                    avatarUrl = employee.avatarUrl,
+                    onClick = { onEvent(EmployeeEvent.SelectEmployee(employee.id)) },
+                )
+            }
 
-        // ── Pavel's card ────────────────────────────────────────────────
-        item {
-            VelocityCard(
-                name = demo.pavelName,
-                role = demo.pavelRole,
-                done = demo.pavelDone,
-                total = demo.pavelTotal,
-                isHealthy = false,
-                onClick = { onEvent(EmployeeEvent.SelectEmployee(demo.pavelId)) },
-            )
-        }
+            item {
+                SummaryCard(employees = state.employees)
+            }
 
-        // ── Summary card ────────────────────────────────────────────────
-        item {
-            SummaryCard(demo = demo)
+            item { Spacer(modifier = Modifier.height(8.dp)) }
         }
-
-        item { Spacer(modifier = Modifier.height(8.dp)) }
     }
 }
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Velocity Card — horizontal progress bar per employee
-// ──────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun VelocityCard(
@@ -175,6 +174,7 @@ private fun VelocityCard(
     done: Int,
     total: Int,
     isHealthy: Boolean,
+    avatarUrl: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -183,8 +183,6 @@ private fun VelocityCard(
     val barColor = burnoutLevel.getStrokeColor()
     val cardBgColor = burnoutLevel.getBackgroundColor()
     val interactionSource = remember { MutableInteractionSource() }
-
-    // Animate progress
     var targetProgress by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(progress) { targetProgress = progress }
     val animatedProgress by animateFloatAsState(
@@ -221,7 +219,6 @@ private fun VelocityCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Avatar
                 Box(
                     modifier = Modifier
                         .size(44.dp)
@@ -229,11 +226,9 @@ private fun VelocityCard(
                         .background(barColor.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Person,
-                        contentDescription = null,
+                    TeamAvatar(
+                        avatarUrl = avatarUrl,
                         tint = barColor,
-                        modifier = Modifier.size(24.dp),
                     )
                 }
 
@@ -252,11 +247,9 @@ private fun VelocityCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-
-                // Status badge
                 AnimatedNumberText(
                     value = done,
-                    suffix = " / $total",
+                    suffix = stringResource(R.string.employee_details_count_suffix, total),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                     ),
@@ -267,15 +260,13 @@ private fun VelocityCard(
 
                 Icon(
                     imageVector = Icons.Filled.ChevronRight,
-                    contentDescription = "Подробнее",
+                    contentDescription = stringResource(R.string.employee_details_more),
                     tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                     modifier = Modifier.size(24.dp),
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Horizontal velocity bar
             LinearProgressIndicator(
                 progress = { animatedProgress },
                 modifier = Modifier
@@ -288,10 +279,8 @@ private fun VelocityCard(
             )
 
             Spacer(modifier = Modifier.height(8.dp))
-
-            // Label under the bar
             Text(
-                text = if (isHealthy) "Темп: Отличный" else "Темп: Критическое отставание",
+                text = if (isHealthy) "Риск выгорания: низкий" else "Риск выгорания: высокий",
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Medium,
                 color = barColor,
@@ -300,15 +289,54 @@ private fun VelocityCard(
     }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Summary Card
-// ──────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun TeamAvatar(
+    avatarUrl: String?,
+    tint: Color,
+    modifier: Modifier = Modifier,
+) {
+    if (avatarUrl.isNullOrBlank()) {
+        AvatarFallback(tint = tint, modifier = modifier)
+        return
+    }
+
+    val fallbackPainter = rememberVectorPainter(Icons.Outlined.Person)
+
+    AsyncImage(
+        model = avatarUrl,
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        modifier = modifier
+            .fillMaxSize()
+            .clip(CircleShape),
+        placeholder = fallbackPainter,
+        error = fallbackPainter,
+        fallback = fallbackPainter,
+    )
+}
+
+@Composable
+private fun AvatarFallback(
+    tint: Color,
+    modifier: Modifier = Modifier,
+) {
+    Icon(
+        imageVector = Icons.Outlined.Person,
+        contentDescription = null,
+        tint = tint,
+        modifier = modifier.size(24.dp),
+    )
+}
 
 @Composable
 private fun SummaryCard(
-    demo: DashboardSnapshot,
+    employees: List<Employee>,
     modifier: Modifier = Modifier,
 ) {
+    val total = employees.sumOf { it.totalCount }
+    val done = employees.sumOf { it.doneCount }
+    val overloaded = employees.count { it.burnoutRisk >= 0.7f }
+
     Card(
         shape = PredictaShapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -325,7 +353,7 @@ private fun SummaryCard(
                 .padding(20.dp),
         ) {
             Text(
-                text = "Общая статистика",
+                text = stringResource(R.string.employee_details_summary_title),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,
@@ -334,21 +362,21 @@ private fun SummaryCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             SummaryRow(
-                label = "Всего задач в спринте",
-                value = "${demo.olegTotal + demo.pavelTotal}",
+                label = stringResource(R.string.employee_details_total),
+                value = "$total",
             )
             SummaryRow(
-                label = "Закрыто",
-                value = "${demo.olegDone + demo.pavelDone}",
+                label = stringResource(R.string.employee_details_done),
+                value = "$done",
             )
             SummaryRow(
-                label = "Осталось",
-                value = "${(demo.olegTotal - demo.olegDone) + (demo.pavelTotal - demo.pavelDone)}",
+                label = stringResource(R.string.employee_details_left),
+                value = "${(total - done).coerceAtLeast(0)}",
             )
             SummaryRow(
-                label = "Статус проекта",
-                value = if (demo.isProjectDelayed) "Задержка ${demo.delayDays} дн." else "В срок",
-                valueColor = if (demo.isProjectDelayed) SemanticCritical else SemanticSuccess,
+                label = stringResource(R.string.employee_details_overloaded),
+                value = "$overloaded",
+                valueColor = if (overloaded > 0) SemanticCritical else SemanticSuccess,
             )
         }
     }
@@ -384,4 +412,5 @@ private fun SummaryRow(
         )
     }
 }
+
 

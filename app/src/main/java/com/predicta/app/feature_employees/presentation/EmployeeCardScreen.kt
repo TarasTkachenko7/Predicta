@@ -44,6 +44,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -60,10 +61,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.predicta.app.R
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisGuidelineComponent
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLabelComponent
@@ -81,6 +88,7 @@ import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
+import com.predicta.app.core.ui.formatBackendText
 import com.predicta.app.feature_dashboard.domain.model.DashboardTask
 import com.predicta.app.feature_dashboard.domain.model.DashboardTaskStatus
 import com.predicta.app.ui.components.AnimatedNumberText
@@ -98,8 +106,6 @@ import com.predicta.app.ui.theme.SemanticSuccess
 import com.predicta.app.ui.theme.SemanticWarning
 import com.predicta.app.ui.theme.SurfaceWhite
 import com.predicta.app.ui.theme.TextSecondary
-import kotlinx.coroutines.delay
-
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -114,45 +120,33 @@ fun EmployeeCardScreen(
 
     if (state.isLoading) return
 
-    if (state.isPavel) {
-        PavelCardContent(
+    if (state.showAnalytics) {
+        EmployeeAnalyticsContent(
             state = state,
             onBack = onNavigateBack,
             onReassign = onNavigateToReassign,
             onToggleDeepWork = viewModel::onToggleDeepWork,
-            onToggleChartMode = viewModel::onToggleChartMode,
             modifier = modifier,
         )
     } else {
-        OlegCardContent(
+        EmployeeSummaryContent(
             state = state,
             onBack = onNavigateBack,
             modifier = modifier,
         )
     }
 }
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Pavel's Card — The main demo scenario screen
-// ──────────────────────────────────────────────────────────────────────────────
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PavelCardContent(
+private fun EmployeeAnalyticsContent(
     state: EmployeeCardState,
     onBack: () -> Unit,
     onReassign: (String) -> Unit,
     onToggleDeepWork: () -> Unit,
-    onToggleChartMode: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Simulate AI "typing" effect
-    var showAiInsight by remember { mutableStateOf(false) }
+    var showAiInsight by remember { mutableStateOf(true) }
     var showInsightSheet by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        delay(600)
-        showAiInsight = true
-    }
 
     if (showInsightSheet) {
         AiInsightBottomSheet(
@@ -170,38 +164,34 @@ private fun PavelCardContent(
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // ── Back button + header ────────────────────────────────────────
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Назад",
+                        contentDescription = stringResource(R.string.common_back),
                         tint = MaterialTheme.colorScheme.primary,
                     )
                 }
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "Карточка сотрудника",
+                    text = stringResource(R.string.employee_card_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
-
-        // ── Employee header card ────────────────────────────────────────
         item {
             EmployeeHeaderCard(
                 name = state.name,
                 role = state.role,
+                avatarUrl = state.avatarUrl,
                 done = state.done,
                 total = state.total,
                 isHealthy = state.isHealthy,
             )
         }
-
-        // ── Risk Factors ──────────────────────────────────────────────────
         if (state.riskFactors.isNotEmpty()) {
             item {
                 Card(
@@ -233,7 +223,7 @@ private fun PavelCardContent(
                                 modifier = Modifier.size(20.dp),
                             )
                             Text(
-                                text = "Факторы риска",
+                                text = stringResource(R.string.employee_card_risk_factors),
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary,
@@ -255,7 +245,7 @@ private fun PavelCardContent(
                                         .background(SemanticWarning),
                                 )
                                 Text(
-                                    text = factor,
+                    text = factor.formatBackendText(),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -265,19 +255,12 @@ private fun PavelCardContent(
                 }
             }
         }
-
-        // ── Forecast chart (plan vs fact) ───────────────────────────────
         item {
             ForecastCard(
                 predictedDays = state.predictedDays,
                 deadlineDays = state.deadlineDays,
-                showRecoveryForecast = state.showRecoveryForecast,
-                recoveryForecastData = state.recoveryForecastData,
-                onToggleChartMode = onToggleChartMode,
             )
         }
-
-        // ── AI Insight card ─────────────────────────────────────────────
         item {
             AnimatedVisibility(
                 visible = showAiInsight,
@@ -289,11 +272,9 @@ private fun PavelCardContent(
                 )
             }
         }
-
-        // ── Task list ───────────────────────────────────────────────────
         item {
             Text(
-                text = "Текущие задачи",
+                text = stringResource(R.string.employee_card_current_tasks),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,
@@ -314,13 +295,8 @@ private fun PavelCardContent(
         item { Spacer(modifier = Modifier.height(8.dp)) }
     }
 }
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Oleg's Card — simple summary
-// ──────────────────────────────────────────────────────────────────────────────
-
 @Composable
-private fun OlegCardContent(
+private fun EmployeeSummaryContent(
     state: EmployeeCardState,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -339,13 +315,13 @@ private fun OlegCardContent(
                 IconButton(onClick = onBack) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Назад",
+                        contentDescription = stringResource(R.string.common_back),
                         tint = MaterialTheme.colorScheme.primary,
                     )
                 }
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "Карточка сотрудника",
+                    text = stringResource(R.string.employee_card_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary,
@@ -357,6 +333,7 @@ private fun OlegCardContent(
             EmployeeHeaderCard(
                 name = state.name,
                 role = state.role,
+                avatarUrl = state.avatarUrl,
                 done = state.done,
                 total = state.total,
                 isHealthy = state.isHealthy,
@@ -393,16 +370,16 @@ private fun OlegCardContent(
                     )
                     Column {
                         Text(
-                            text = "Оптимальная загрузка",
+                            text = stringResource(R.string.employee_card_optimal_load),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = SemanticSuccess,
                         )
                         Text(
                             text = if (assignedTasks.isEmpty()) {
-                                "Олег закрыл все задачи вовремя и готов принять дополнительную нагрузку."
+                                stringResource(R.string.employee_card_ready_text)
                             } else {
-                                "Олег получил ${assignedTasks.size} новую задачу. Она назначена, но еще не выполнена."
+                                stringResource(R.string.employee_card_assigned_text, assignedTasks.size)
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -416,7 +393,7 @@ private fun OlegCardContent(
         if (assignedTasks.isNotEmpty()) {
             item {
                 Text(
-                    text = "Новые задачи",
+                    text = stringResource(R.string.employee_card_new_tasks),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary,
@@ -426,7 +403,7 @@ private fun OlegCardContent(
 
             itemsIndexed(
                 items = assignedTasks,
-                key = { _, task -> "oleg_${task.id}" },
+                key = { _, task -> "assigned_${task.id}" },
             ) { _, task ->
                 AssignedTaskCard(task = task)
             }
@@ -436,14 +413,11 @@ private fun OlegCardContent(
     }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Shared Components
-// ──────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun EmployeeHeaderCard(
     name: String,
     role: String,
+    avatarUrl: String?,
     done: Int,
     total: Int,
     isHealthy: Boolean,
@@ -478,11 +452,9 @@ private fun EmployeeHeaderCard(
                     .background(statusColor.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Person,
-                    contentDescription = null,
+                EmployeeAvatar(
+                    avatarUrl = avatarUrl,
                     tint = statusColor,
-                    modifier = Modifier.size(32.dp),
                 )
             }
 
@@ -505,20 +477,51 @@ private fun EmployeeHeaderCard(
             Column(horizontalAlignment = Alignment.End) {
                 AnimatedNumberText(
                     value = done,
-                    suffix = " / $total",
+                    suffix = stringResource(R.string.employee_card_count_suffix, total),
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold,
                     ),
                     color = statusColor,
                 )
                 Text(
-                    text = "задач",
+                    text = stringResource(R.string.employee_card_tasks_suffix),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
     }
+}
+
+@Composable
+private fun EmployeeAvatar(
+    avatarUrl: String?,
+    tint: Color,
+    modifier: Modifier = Modifier,
+) {
+    if (avatarUrl.isNullOrBlank()) {
+        Icon(
+            imageVector = Icons.Outlined.Person,
+            contentDescription = null,
+            tint = tint,
+            modifier = modifier.size(32.dp),
+        )
+        return
+    }
+
+    val fallbackPainter = rememberVectorPainter(Icons.Outlined.Person)
+
+    AsyncImage(
+        model = avatarUrl,
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        modifier = modifier
+            .fillMaxSize()
+            .clip(CircleShape),
+        placeholder = fallbackPainter,
+        error = fallbackPainter,
+        fallback = fallbackPainter,
+    )
 }
 
 @Composable
@@ -562,7 +565,7 @@ private fun AssignedTaskCard(
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = "Назначена Олегу · к выполнению",
+                    text = stringResource(R.string.employee_card_assigned_to),
                     style = MaterialTheme.typography.labelSmall,
                     color = SemanticWarning,
                     modifier = Modifier.padding(top = 2.dp),
@@ -576,46 +579,13 @@ private fun AssignedTaskCard(
 private fun ForecastCard(
     predictedDays: Int,
     deadlineDays: Int,
-    showRecoveryForecast: Boolean,
-    recoveryForecastData: List<Float>,
-    onToggleChartMode: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val modelProducer = remember { CartesianChartModelProducer() }
-    val planColor = MaterialTheme.colorScheme.primary
-    val axisLabel = rememberAxisLabelComponent(
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    val axisLine = rememberAxisLineComponent(
-        fill = fill(MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)),
-    )
-    val axisTick = rememberAxisTickComponent(
-        fill = fill(MaterialTheme.colorScheme.outline.copy(alpha = 0.45f)),
-    )
-    val axisGuideline = rememberAxisGuidelineComponent(
-        fill = fill(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)),
-    )
-    val dayLabels = remember { listOf("Сейчас", "+1д", "+2д", "+3д", "+4д", "+5д", "+6д", "+7д", "+8д") }
-    val bottomAxisValueFormatter = remember {
-        CartesianValueFormatter { _, value, _ ->
-            dayLabels.getOrElse(value.toInt()) { "" }
-        }
-    }
-
-    LaunchedEffect(showRecoveryForecast, recoveryForecastData) {
-        modelProducer.runTransaction {
-            lineSeries {
-                if (showRecoveryForecast) {
-                    series(recoveryForecastData)
-                } else {
-                    // Plan line (ideal pace)
-                    series(0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0)
-                    // Fact line (Pavel's actual pace — slow)
-                    series(0.0, 0.2, 0.3, 0.5, 0.6, 0.7, 0.9, 1.0, 1.1)
-                }
-            }
-        }
-    }
+    val progressBase = maxOf(predictedDays, deadlineDays, 1)
+    val predictedProgress = predictedDays.toFloat() / progressBase.toFloat()
+    val deadlineProgress = deadlineDays.toFloat() / progressBase.toFloat()
+    val statusColor = if (predictedDays <= deadlineDays) SemanticSuccess else SemanticCritical
+    val deltaDays = kotlin.math.abs(deadlineDays - predictedDays)
 
     Card(
         shape = PredictaShapes.medium,
@@ -631,131 +601,80 @@ private fun ForecastCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Schedule,
-                    contentDescription = null,
-                    tint = SemanticCritical,
-                    modifier = Modifier.size(20.dp),
-                )
-                Text(
-                    text = "Прогноз дедлайна",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.employee_card_deadline_forecast),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+            )
 
             Text(
-                text = if (showRecoveryForecast) {
-                    "При включенной защите фокуса риск выгорания плавно снижается."
+                text = if (predictedDays <= deadlineDays) {
+                    stringResource(R.string.employee_card_forecast_on_time, deltaDays)
                 } else {
-                    "С текущим темпом Павел закончит свои задачи через $predictedDays дней вместо $deadlineDays."
+                    stringResource(R.string.employee_card_forecast_risk, deltaDays)
                 },
-                style = MaterialTheme.typography.bodySmall,
-                color = if (showRecoveryForecast) SemanticSuccess else SemanticCritical,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
+                color = statusColor,
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Legend and Toggle Button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (showRecoveryForecast) {
-                    LegendItem(color = SemanticSuccess, label = "Прогноз")
-                } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                        LegendItem(color = MaterialTheme.colorScheme.primary, label = "План")
-                        LegendItem(color = SemanticCritical, label = "Факт")
-                    }
-                }
-
-                OutlinedButton(
-                    onClick = onToggleChartMode,
-                    shape = PredictaShapes.medium,
-                ) {
-                    Text(
-                        text = if (showRecoveryForecast) "История нагрузки" else "Прогноз восстановления",
-                        style = MaterialTheme.typography.labelSmall,
-                    )
-                }
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                ForecastBarRow(
+                    label = stringResource(R.string.employee_card_forecast_plan),
+                    value = predictedDays,
+                    progress = predictedProgress.coerceIn(0f, 1f),
+                    barColor = statusColor,
+                )
+                ForecastBarRow(
+                    label = stringResource(R.string.employee_card_forecast_left),
+                    value = deadlineDays,
+                    progress = deadlineProgress.coerceIn(0f, 1f),
+                    barColor = MaterialTheme.colorScheme.primary,
+                )
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            val planLine = LineCartesianLayer.rememberLine(
-                fill = remember(planColor) { LineCartesianLayer.LineFill.single(fill(planColor)) },
-            )
-            val factLine = LineCartesianLayer.rememberLine(
-                fill = remember { LineCartesianLayer.LineFill.single(fill(SemanticCritical)) },
-            )
-            val recoveryLine = LineCartesianLayer.rememberLine(
-                fill = remember { LineCartesianLayer.LineFill.single(fill(SemanticSuccess)) },
-            )
-
-            CartesianChartHost(
-                chart = rememberCartesianChart(
-                    rememberLineCartesianLayer(
-                        lineProvider = if (showRecoveryForecast) {
-                            LineCartesianLayer.LineProvider.series(recoveryLine)
-                        } else {
-                            LineCartesianLayer.LineProvider.series(planLine, factLine)
-                        }
-                    ),
-                    startAxis = VerticalAxis.rememberStart(
-                        line = axisLine,
-                        label = axisLabel,
-                        tick = axisTick,
-                        guideline = axisGuideline,
-                    ),
-                    bottomAxis = HorizontalAxis.rememberBottom(
-                        line = axisLine,
-                        label = axisLabel,
-                        tick = axisTick,
-                        guideline = axisGuideline,
-                        valueFormatter = bottomAxisValueFormatter,
-                    ),
-                ),
-                modelProducer = modelProducer,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp),
-            )
         }
     }
 }
 
 @Composable
-private fun LegendItem(
-    color: Color,
+private fun ForecastBarRow(
     label: String,
+    value: Int,
+    progress: Float,
+    barColor: Color,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Box(
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = stringResource(R.string.employee_card_days_suffix, value),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+
+        LinearProgressIndicator(
+            progress = { progress },
             modifier = Modifier
-                .size(10.dp)
-                .clip(CircleShape)
-                .background(color),
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                .fillMaxWidth()
+                .height(10.dp)
+                .clip(RoundedCornerShape(999.dp)),
+            color = barColor,
+            trackColor = barColor.copy(alpha = 0.15f),
+            strokeCap = StrokeCap.Round,
         )
     }
 }
@@ -802,7 +721,7 @@ private fun AiInsightCard(
                         modifier = Modifier.size(22.dp),
                     )
                     Text(
-                        text = "Аналитика Predicta AI",
+                        text = stringResource(R.string.employee_card_ai_title),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
@@ -812,7 +731,7 @@ private fun AiInsightCard(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = insight,
+                    text = insight.formatBackendText(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = MaterialTheme.typography.bodyMedium.lineHeight,
@@ -826,7 +745,7 @@ private fun AiInsightCard(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
-                        text = "Разобрать инсайт",
+                        text = stringResource(R.string.employee_card_ai_button),
                         fontWeight = FontWeight.SemiBold,
                     )
                 }
@@ -854,28 +773,28 @@ private fun AiInsightBottomSheet(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text(
-                text = "Как Predicta пришла к выводу",
+                text = stringResource(R.string.employee_card_ai_explainer_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
             )
             InsightReasonRow(
-                title = "Темп ниже плана",
-                value = "$predictedDays дн.",
-                description = "Прогноз завершения превышает дедлайн в $deadlineDays дня.",
+                title = stringResource(R.string.employee_card_ai_reason_slow),
+                value = stringResource(R.string.employee_card_days_short, predictedDays),
+                description = stringResource(R.string.employee_card_ai_reason_slow_description, deadlineDays),
             )
             InsightReasonRow(
-                title = "Риск перегруза",
-                value = "High",
-                description = "Открытые задачи сконцентрированы на одном исполнителе.",
+                title = stringResource(R.string.employee_card_ai_reason_risk),
+                value = stringResource(R.string.employee_card_high),
+                description = stringResource(R.string.employee_card_ai_reason_risk_description),
             )
             InsightReasonRow(
-                title = "Рекомендация",
-                value = "Reassign",
-                description = "Перенести часть нагрузки на свободного участника команды.",
+                title = stringResource(R.string.employee_card_ai_recommendation),
+                value = stringResource(R.string.employee_card_reassign_value),
+                description = stringResource(R.string.employee_card_ai_recommendation_description),
             )
             Text(
-                text = insight,
+                text = insight.formatBackendText(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -969,7 +888,6 @@ private fun TaskCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Status dot
                 Box(
                     modifier = Modifier
                         .size(10.dp)
@@ -1018,7 +936,7 @@ private fun TaskCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Перераспределить",
+                        text = stringResource(R.string.employee_card_reassign),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -1027,3 +945,4 @@ private fun TaskCard(
         }
     }
 }
+

@@ -2,9 +2,10 @@ package com.predicta.app.feature_employees.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.predicta.app.core.error.AppResult
 import com.predicta.app.core.ui.UiEffect
-import com.predicta.app.feature_dashboard.domain.model.DashboardSnapshot
-import com.predicta.app.feature_dashboard.domain.usecase.GetDemoStateUseCase
+import com.predicta.app.core.ui.toUiText
+import com.predicta.app.feature_employees.domain.usecase.GetEmployeesUseCase
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -14,12 +15,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * ViewModel for the Team Velocity screen.
- * Observes [DemoStateManager] for live data about Oleg and Pavel.
- */
 class EmployeeViewModel(
-    private val getDemoStateUseCase: GetDemoStateUseCase,
+    private val getEmployeesUseCase: GetEmployeesUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(EmployeeState())
@@ -27,40 +24,51 @@ class EmployeeViewModel(
 
     private val _effects = MutableSharedFlow<EmployeeEffect>()
     val effects: SharedFlow<EmployeeEffect> = _effects.asSharedFlow()
-    private var latestSnapshot: DashboardSnapshot? = null
 
     init {
-        observeDemoState()
+        loadEmployees()
     }
 
     fun onEvent(event: EmployeeEvent) {
         when (event) {
-            is EmployeeEvent.Refresh -> latestSnapshot?.let(::applyDemoState)
+            is EmployeeEvent.Refresh -> loadEmployees()
             is EmployeeEvent.SelectEmployee -> {
                 viewModelScope.launch {
-                    _effects.emit(
-                        EmployeeEffect.GoToEmployeeCard(event.employeeId),
-                    )
+                    _effects.emit(EmployeeEffect.GoToEmployeeCard(event.employeeId))
                 }
             }
         }
     }
 
-    private fun observeDemoState() {
+    private fun loadEmployees() {
         viewModelScope.launch {
-            getDemoStateUseCase().collect { demo ->
-                latestSnapshot = demo
-                applyDemoState(demo)
+            _state.update { current ->
+                if (current.employees.isEmpty()) {
+                    current.copy(isLoading = true, isRefreshing = false, error = null)
+                } else {
+                    current.copy(isRefreshing = true, error = null)
+                }
             }
-        }
-    }
-
-    private fun applyDemoState(demo: DashboardSnapshot) {
-        _state.update {
-            it.copy(
-                isLoading = false,
-                demoData = demo,
-            )
+            when (val result = getEmployeesUseCase()) {
+                is AppResult.Success -> {
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            isRefreshing = false,
+                            employees = result.value,
+                        )
+                    }
+                }
+                is AppResult.Failure -> {
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            isRefreshing = false,
+                            error = result.error.toUiText(),
+                        )
+                    }
+                }
+            }
         }
     }
 }

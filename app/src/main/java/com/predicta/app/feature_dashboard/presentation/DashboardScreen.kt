@@ -25,21 +25,29 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +55,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -70,6 +79,7 @@ import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
 import com.predicta.app.feature_dashboard.domain.model.GlobalAlert
 import com.predicta.app.feature_dashboard.domain.model.TeamPace
+import com.predicta.app.R
 import com.predicta.app.ui.components.AnimatedNumberText
 import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.theme.BackgroundCritical
@@ -110,6 +120,7 @@ fun DashboardScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DashboardContent(
     state: DashboardState,
@@ -130,102 +141,93 @@ private fun DashboardContent(
         return
     }
 
-    LazyColumn(
+    PullToRefreshBox(
+        isRefreshing = state.isRefreshing,
+        onRefresh = { onEvent(DashboardEvent.Refresh) },
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        // ── Section: Sprint Status Widget ────────────────────────────────
-        item {
-            SprintStatusCard(
-                sprintName = state.sprintName,
-                isDelayed = state.isProjectDelayed,
-                delayDays = state.delayDays,
-                delayTrack = state.delayTrack,
-                completionPercent = state.sprintCompletionPercent,
-                elapsedDays = state.sprintElapsedDays,
-                totalDays = state.sprintTotalDays,
-                hasBeenReassigned = state.hasBeenReassigned,
-            )
-        }
-
-        // ── Section: Sprint Velocity Chart ──────────────────────────────
-        item {
-            Text(
-                text = "Темп команды (Story Points / день)",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold,
-            )
-        }
-
-        item {
-            SprintVelocityChart(
-                teamPace = state.teamPace,
-                isDelayed = state.isProjectDelayed,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(220.dp),
-            )
-        }
-
-        // ── Section: AI Alerts ──────────────────────────────────────────
-        if (state.alerts.isNotEmpty()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
             item {
-                Text(
-                    text = "Предупреждения",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(top = 4.dp),
+                val teamHasRisk = state.teamPace.any { it.isRisky }
+
+                SprintStatusCard(
+                    sprintName = state.sprintName,
+                    hasRisk = teamHasRisk,
+                    completionPercent = state.sprintCompletionPercent,
+                    elapsedDays = state.sprintElapsedDays,
+                    totalDays = state.sprintTotalDays,
+                    hasBeenReassigned = state.hasBeenReassigned,
                 )
             }
 
-            items(
-                items = state.alerts,
-                key = { it.id },
-            ) { alert ->
-                AlertCard(
-                    alert = alert,
-                    onResolve = { onEvent(DashboardEvent.AlertClicked(alert.id)) },
+            item {
+                SprintVelocityChart(
+                    teamPace = state.teamPace,
+                    isDelayed = state.isProjectDelayed,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .animateContentSize(),
+                        .height(220.dp),
                 )
             }
-        }
 
-        // Bottom spacer for comfortable scrolling above the nav bar
-        item { Spacer(modifier = Modifier.height(8.dp)) }
+            if (state.alerts.isNotEmpty()) {
+                item {
+                    Text(
+                        text = stringResource(R.string.dashboard_alerts_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+
+                items(
+                    items = state.alerts,
+                    key = { it.id },
+                ) { alert ->
+                    AlertCard(
+                        alert = alert,
+                        onResolve = { onEvent(DashboardEvent.AlertClicked(alert.id)) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .animateContentSize(),
+                    )
+                }
+            }
+
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+        }
     }
 }
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Sprint Status Card — the hero widget
-// ──────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun SprintStatusCard(
     sprintName: String,
-    isDelayed: Boolean,
-    delayDays: Int,
-    delayTrack: String,
+    hasRisk: Boolean,
     completionPercent: Float,
     elapsedDays: Int,
     totalDays: Int,
     hasBeenReassigned: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val statusColor = if (isDelayed) SemanticCritical else SemanticSuccess
-    val statusBgColor = if (isDelayed) BackgroundCritical else BackgroundSuccess
+    val statusColor = if (hasRisk) SemanticCritical else SemanticSuccess
+    val statusBgColor = if (hasRisk) BackgroundCritical else BackgroundSuccess
     val textColor = MaterialTheme.colorScheme.primary
     val subTextColor = MaterialTheme.colorScheme.onSurfaceVariant
 
-    // Animated completion progress
-    var targetProgress by remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(completionPercent) { targetProgress = completionPercent }
+    var hasAnimatedProgress by rememberSaveable { mutableStateOf(false) }
+    val targetProgress = if (hasAnimatedProgress) completionPercent else 0f
+
+    LaunchedEffect(completionPercent) {
+        hasAnimatedProgress = true
+    }
+
     val animatedProgress by animateFloatAsState(
         targetValue = targetProgress,
         animationSpec = tween(durationMillis = 1000),
@@ -248,7 +250,6 @@ private fun SprintStatusCard(
                 .fillMaxWidth()
                 .padding(24.dp),
         ) {
-            // Sprint label
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -262,22 +263,18 @@ private fun SprintStatusCard(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-
-            // Status message
             Text(
-                text = if (isDelayed) {
-                    "Риск срыва дедлайна $delayTrack на $delayDays дня"
+                text = if (hasRisk) {
+                    stringResource(R.string.dashboard_status_risk)
                 } else {
-                    "Новый прогноз проекта: Сдача вовремя"
+                    stringResource(R.string.dashboard_status_no_risk)
                 },
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
-                color = if (isDelayed) statusColor else textColor,
+                color = if (hasRisk) statusColor else textColor,
             )
 
             Spacer(modifier = Modifier.height(20.dp))
-
-            // Progress bar
             Column {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -286,13 +283,13 @@ private fun SprintStatusCard(
                 ) {
                     AnimatedNumberText(
                         value = (animatedProgress * 100).toInt(),
-                        prefix = "Выполнено: ",
-                        suffix = "%",
+                        prefix = stringResource(R.string.dashboard_progress_prefix),
+                        suffix = stringResource(R.string.dashboard_percent_suffix),
                         style = MaterialTheme.typography.labelMedium,
                         color = subTextColor,
                     )
                     Text(
-                        text = "День $elapsedDays из $totalDays",
+                        text = stringResource(R.string.dashboard_progress_day, elapsedDays, totalDays),
                         style = MaterialTheme.typography.labelMedium,
                         color = subTextColor,
                     )
@@ -309,10 +306,8 @@ private fun SprintStatusCard(
                     strokeCap = StrokeCap.Round,
                 )
             }
-
-            // Reassignment success badge
             AnimatedVisibility(
-                visible = hasBeenReassigned && !isDelayed,
+                visible = hasBeenReassigned && !hasRisk,
                 enter = fadeIn(tween(600)) + slideInVertically(tween(600)),
             ) {
                 Row(
@@ -332,7 +327,7 @@ private fun SprintStatusCard(
                         modifier = Modifier.size(20.dp),
                     )
                     Text(
-                        text = "Сроки в Jira обновлены. Проект выровнен.",
+                        text = stringResource(R.string.dashboard_reassignment_synced),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
                         color = textColor,
@@ -343,46 +338,15 @@ private fun SprintStatusCard(
     }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Vico Chart: Sprint Velocity (Line)
-// ──────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun SprintVelocityChart(
     teamPace: List<TeamPace>,
     isDelayed: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val modelProducer = remember { CartesianChartModelProducer() }
-    val lineColor = MaterialTheme.colorScheme.primary
-    val axisLabel = rememberAxisLabelComponent(
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    val axisLine = rememberAxisLineComponent(
-        fill = fill(MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)),
-    )
-    val axisTick = rememberAxisTickComponent(
-        fill = fill(MaterialTheme.colorScheme.outline.copy(alpha = 0.45f)),
-    )
-    val axisGuideline = rememberAxisGuidelineComponent(
-        fill = fill(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)),
-    )
-    val dayLabels = remember(teamPace) { teamPace.map { it.day } }
-    val bottomAxisValueFormatter = remember(dayLabels) {
-        CartesianValueFormatter { _, value, _ ->
-            dayLabels.getOrElse(value.toInt()) { "" }
-        }
-    }
-
-    LaunchedEffect(teamPace) {
-        if (teamPace.isNotEmpty()) {
-            modelProducer.runTransaction {
-                lineSeries {
-                    series(teamPace.map { it.velocity.toDouble() })
-                }
-            }
-        }
-    }
+    var showStoryPointsInfo by remember { mutableStateOf(false) }
+    val safeColor = SemanticSuccess
+    val riskyColor = if (isDelayed) SemanticWarning else SemanticCritical
 
     Card(
         shape = PredictaShapes.medium,
@@ -393,42 +357,108 @@ private fun SprintVelocityChart(
             liquidIntensity = 0.8f,
         ),
     ) {
-        CartesianChartHost(
-            chart = rememberCartesianChart(
-                rememberLineCartesianLayer(
-                    lineProvider = LineCartesianLayer.LineProvider.series(
-                        LineCartesianLayer.rememberLine(
-                            fill = remember(lineColor) {
-                                LineCartesianLayer.LineFill.single(fill(lineColor))
-                            },
-                        ),
-                    ),
-                ),
-                startAxis = VerticalAxis.rememberStart(
-                    line = axisLine,
-                    label = axisLabel,
-                    tick = axisTick,
-                    guideline = axisGuideline,
-                ),
-                bottomAxis = HorizontalAxis.rememberBottom(
-                    line = axisLine,
-                    label = axisLabel,
-                    tick = axisTick,
-                    guideline = axisGuideline,
-                    valueFormatter = bottomAxisValueFormatter,
-                ),
-            ),
-            modelProducer = modelProducer,
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-        )
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = stringResource(R.string.dashboard_team_title),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+
+                Box {
+                    IconButton(onClick = { showStoryPointsInfo = !showStoryPointsInfo }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
+                            contentDescription = stringResource(R.string.dashboard_team_help),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = showStoryPointsInfo,
+                        onDismissRequest = { showStoryPointsInfo = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = stringResource(R.string.dashboard_team_help_body),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            },
+                            onClick = { showStoryPointsInfo = false },
+                        )
+                    }
+                }
+            }
+
+            if (teamPace.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.dashboard_no_data),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    items(teamPace) { pace ->
+                        val progressBase = maxOf(pace.totalCount, 1)
+                        val progress = (pace.completedCount.toFloat() / progressBase.toFloat()).coerceIn(0f, 1f)
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = pace.day,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                Text(
+                                    text = stringResource(
+                                        R.string.dashboard_task_ratio,
+                                        pace.completedCount,
+                                        pace.totalCount,
+                                    ),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (pace.isRisky) riskyColor else safeColor,
+                                )
+                            }
+
+                            LinearProgressIndicator(
+                                progress = { progress },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(10.dp)
+                                    .clip(RoundedCornerShape(999.dp)),
+                                color = if (pace.isRisky) riskyColor else safeColor,
+                                trackColor = (if (pace.isRisky) riskyColor else safeColor).copy(alpha = 0.14f),
+                                strokeCap = StrokeCap.Round,
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Alert Card
-// ──────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun AlertCard(
@@ -465,7 +495,6 @@ private fun AlertCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    // Severity indicator dot
                     Box(
                         modifier = Modifier
                             .size(10.dp)
@@ -501,7 +530,7 @@ private fun AlertCard(
                     ),
                 ) {
                     Text(
-                        text = "Решить",
+                        text = stringResource(R.string.dashboard_resolve),
                         fontWeight = FontWeight.SemiBold,
                     )
                 }
@@ -509,4 +538,5 @@ private fun AlertCard(
         }
     }
 }
+
 

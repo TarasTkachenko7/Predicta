@@ -12,11 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * ViewModel for the Task Assignment screen.
- * Loads employee data for the assignee dropdown and generates
- * AI burnout recommendations when a risky assignment is detected.
- */
+
 class TaskViewModel(
     private val getEmployees: GetEmployeesUseCase,
 ) : ViewModel() {
@@ -74,11 +70,7 @@ class TaskViewModel(
         }
     }
 
-    /**
-     * Core AI feature: when a task description is entered and the selected
-     * assignee has a high burnout risk, generate a warning recommendation
-     * suggesting a healthier alternative.
-     */
+    
     private fun evaluateAiRecommendation() {
         val currentState = _state.value
         val selected = currentState.selectedEmployee
@@ -90,7 +82,6 @@ class TaskViewModel(
         }
 
         if (selected.burnoutRisk >= 0.7f) {
-            // Find the team member with the lowest burnout risk as an alternative
             val alternative = currentState.employees
                 .filter { it.id != selected.id }
                 .minByOrNull { it.burnoutRisk }
@@ -111,3 +102,4 @@ class TaskViewModel(
         }
     }
 }
+
