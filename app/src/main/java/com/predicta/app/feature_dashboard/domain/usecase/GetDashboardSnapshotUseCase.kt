@@ -1,13 +1,13 @@
 package com.predicta.app.feature_dashboard.domain.usecase
 
+import com.predicta.app.core.error.AppResult
 import com.predicta.app.feature_dashboard.domain.model.DashboardSnapshot
 import com.predicta.app.feature_dashboard.domain.repository.DashboardRepository
-import kotlinx.coroutines.flow.Flow
 
-class GetDemoStateUseCase(
+class GetDashboardSnapshotUseCase(
     private val repository: DashboardRepository,
 ) {
-    operator fun invoke(): Flow<DashboardSnapshot> {
-        return repository.observeSnapshot()
+    suspend operator fun invoke(): AppResult<DashboardSnapshot> {
+        return repository.getSnapshot()
     }
 }

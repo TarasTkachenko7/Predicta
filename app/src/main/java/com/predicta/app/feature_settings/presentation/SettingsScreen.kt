@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CloudQueue
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Settings
@@ -113,6 +114,14 @@ fun SettingsScreen(
         }
 
         item {
+            ApiSettingsCard(
+                apiBaseUrl = state.apiBaseUrl,
+                onSave = { viewModel.onEvent(SettingsEvent.UpdateApiBaseUrl(it)) },
+                onReset = { viewModel.onEvent(SettingsEvent.ResetApiBaseUrl) },
+            )
+        }
+
+        item {
             RuntimeStatusCard()
         }
 
@@ -121,6 +130,55 @@ fun SettingsScreen(
         }
 
         item { Spacer(modifier = Modifier.height(8.dp)) }
+    }
+}
+
+@Composable
+private fun ApiSettingsCard(
+    apiBaseUrl: String,
+    onSave: (String) -> Unit,
+    onReset: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var draftUrl by remember(apiBaseUrl) { mutableStateOf(apiBaseUrl) }
+
+    SettingsCard(modifier = modifier) {
+        SectionTitle(
+            icon = Icons.Outlined.Link,
+            title = "API",
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = draftUrl,
+            onValueChange = { draftUrl = it },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            label = { Text("Base URL") },
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            OutlinedButton(
+                onClick = { onReset() },
+                modifier = Modifier.weight(1f),
+                shape = PredictaShapes.medium,
+            ) {
+                Text("Сбросить")
+            }
+            OutlinedButton(
+                onClick = { onSave(draftUrl) },
+                modifier = Modifier.weight(1f),
+                shape = PredictaShapes.medium,
+            ) {
+                Text("Сохранить")
+            }
+        }
     }
 }
 
@@ -422,7 +480,7 @@ private fun RuntimeStatusCard(
             icon = Icons.Outlined.CloudQueue,
             title = "Синхронизация",
             value = "Готово",
-            description = "Локальное состояние готово к подключению API",
+            description = "Данные загружаются из Predicta API",
         )
         StatusRow(
             icon = Icons.Outlined.AutoAwesome,
@@ -446,7 +504,7 @@ private fun AppInfoCard(
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "Клиентская часть подготовлена к промышленному API: экраны отделены от источника данных, а сетевой слой можно подключить без перестройки интерфейса.",
+            text = "Приложение подключено к Predicta API. Адрес backend можно обновить выше при смене ngrok.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

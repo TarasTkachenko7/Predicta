@@ -1,8 +1,5 @@
 package com.predicta.app.feature_dashboard.domain.model
 
-/**
- * Domain snapshot of the demo dashboard scenario.
- */
 data class DashboardSnapshot(
     val sprintNumber: Int,
     val sprintName: String,
@@ -12,21 +9,21 @@ data class DashboardSnapshot(
     val sprintCompletionPercent: Float,
     val sprintTotalDays: Int,
     val sprintElapsedDays: Int,
-    val olegId: String,
-    val olegName: String,
-    val olegRole: String,
-    val olegDone: Int,
-    val olegTotal: Int,
-    val pavelId: String,
-    val pavelName: String,
-    val pavelRole: String,
-    val pavelDone: Int,
-    val pavelTotal: Int,
-    val pavelTasks: List<DashboardTask>,
-    val pavelAiInsight: String,
-    val pavelPredictedDays: Int,
-    val pavelDeadlineDays: Int,
-    val pavelRiskFactors: List<String>,
+    val primaryEmployeeId: String,
+    val primaryEmployeeName: String,
+    val primaryEmployeeRole: String,
+    val primaryEmployeeDone: Int,
+    val primaryEmployeeTotal: Int,
+    val secondaryEmployeeId: String,
+    val secondaryEmployeeName: String,
+    val secondaryEmployeeRole: String,
+    val secondaryEmployeeDone: Int,
+    val secondaryEmployeeTotal: Int,
+    val secondaryEmployeeTasks: List<DashboardTask>,
+    val aiInsight: String,
+    val predictedDays: Int,
+    val deadlineDays: Int,
+    val riskFactors: List<String>,
     val hasBeenReassigned: Boolean,
     val isDeepWorkActive: Boolean,
 )
@@ -44,9 +41,4 @@ enum class DashboardTaskStatus {
     IN_PROGRESS,
     DONE,
     REASSIGNED,
-}
-
-object DashboardEmployeeIds {
-    const val OLEG_ID = "emp_oleg"
-    const val PAVEL_ID = "emp_pavel"
 }

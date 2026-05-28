@@ -6,6 +6,5 @@ class ToggleDeepWorkUseCase(
     private val repository: DashboardRepository,
 ) {
     operator fun invoke() {
-        repository.toggleDeepWork()
     }
 }

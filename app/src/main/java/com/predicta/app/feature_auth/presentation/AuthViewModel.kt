@@ -7,7 +7,6 @@ import com.predicta.app.core.ui.UiEffect
 import com.predicta.app.core.ui.toUiText
 import com.predicta.app.feature_auth.data.session.UserSessionManager
 import com.predicta.app.feature_auth.domain.usecase.AuthInteractors
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -32,26 +31,14 @@ class AuthViewModel(
         when (event) {
             is AuthEvent.EmailChanged,
             is AuthEvent.PasswordChanged,
-            is AuthEvent.NameChanged,
-            AuthEvent.FillDemoCredentials,
-            is AuthEvent.RecoveryCodeChanged,
-            is AuthEvent.NewPasswordChanged,
-            is AuthEvent.ConfirmPasswordChanged,
+            is AuthEvent.FirstNameChanged,
+            is AuthEvent.LastNameChanged,
+            is AuthEvent.TelegramNickChanged,
+            is AuthEvent.PhoneChanged,
             AuthEvent.ResetSuccessState,
-            AuthEvent.ResetPasswordRecoveryStep,
             -> _state.update { reduceAuthInput(it, event) }
-
-            AuthEvent.LoginDemoSubmit -> {
-                _state.update { reduceAuthInput(it, event) }
-                login()
-            }
             AuthEvent.LoginSubmit -> login()
             AuthEvent.RegisterSubmit -> register()
-            AuthEvent.ResetSubmit,
-            AuthEvent.SubmitEmailForReset,
-            -> submitEmailForReset()
-            AuthEvent.SubmitRecoveryCode -> submitRecoveryCode()
-            AuthEvent.SubmitNewPasswords -> submitNewPasswords()
         }
     }
 
@@ -88,7 +75,17 @@ class AuthViewModel(
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, globalError = null) }
-            when (val result = interactors.register(_state.value.email, _state.value.password, _state.value.name)) {
+            val state = _state.value
+            when (
+                val result = interactors.register(
+                    email = state.email,
+                    password = state.password,
+                    firstName = state.firstName,
+                    lastName = state.lastName,
+                    telegramNick = state.telegramNick,
+                    phone = state.phone,
+                )
+            ) {
                 is AppResult.Success -> {
                     sessionManager.startSession(result.value)
                     _state.update { it.copy(isLoading = false, isSuccess = true) }
@@ -100,56 +97,6 @@ class AuthViewModel(
                     }
                 }
             }
-        }
-    }
-
-    private fun submitEmailForReset() {
-        val errors = validateResetEmail(_state.value)
-        if (errors.isNotEmpty()) {
-            _state.update { applyValidationErrors(it.copy(globalError = null), errors) }
-            return
-        }
-
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, globalError = null) }
-            when (val result = interactors.resetPassword(_state.value.email)) {
-                is AppResult.Success -> {
-                    _state.update { it.copy(isLoading = false, resetStep = ResetStep.CODE_VERIFICATION) }
-                }
-                is AppResult.Failure -> {
-                    _state.update {
-                        it.copy(isLoading = false, globalError = result.error.toUiText())
-                    }
-                }
-            }
-        }
-    }
-
-    private fun submitRecoveryCode() {
-        val errors = validateRecoveryCode(_state.value)
-        if (errors.isNotEmpty()) {
-            _state.update { applyValidationErrors(it.copy(globalError = null), errors) }
-            return
-        }
-
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, globalError = null) }
-            delay(500)
-            _state.update { it.copy(isLoading = false, resetStep = ResetStep.NEW_PASSWORD) }
-        }
-    }
-
-    private fun submitNewPasswords() {
-        val errors = validateNewPasswords(_state.value)
-        if (errors.isNotEmpty()) {
-            _state.update { applyValidationErrors(it.copy(globalError = null), errors) }
-            return
-        }
-
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, globalError = null) }
-            delay(500)
-            _state.update { it.copy(isLoading = false, resetStep = ResetStep.SUCCESS) }
         }
     }
 }

@@ -6,6 +6,7 @@ data class TaskReassignmentState(
     val taskTitle: String = "",
     val fromName: String = "",
     val toName: String = "",
+    val toId: String = "",
     val toRole: String = "",
     val toDone: Int = 0,
     val toTotal: Int = 0,

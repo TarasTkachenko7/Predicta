@@ -19,7 +19,7 @@ fun reduceDashboardSnapshot(
         sprintElapsedDays = snapshot.sprintElapsedDays,
         sprintTotalDays = snapshot.sprintTotalDays,
         hasBeenReassigned = snapshot.hasBeenReassigned,
-        teamPace = createTeamPace(snapshot.isProjectDelayed),
+        teamPace = createTeamPace(snapshot),
         alerts = createDashboardAlerts(snapshot)
             .filterNot { alert -> alert.id in dismissedAlertIds },
     )
@@ -31,56 +31,31 @@ fun reduceDismissAlert(currentState: DashboardState, alertId: String): Dashboard
     )
 }
 
-private fun createTeamPace(isDelayed: Boolean): List<TeamPace> {
-    return if (isDelayed) {
-        listOf(
-            TeamPace(day = "Пн", velocity = 8f),
-            TeamPace(day = "Вт", velocity = 12f),
-            TeamPace(day = "Ср", velocity = 7f),
-            TeamPace(day = "Чт", velocity = 5f),
-            TeamPace(day = "Пт", velocity = 4f),
-            TeamPace(day = "Сб", velocity = 3f),
-            TeamPace(day = "Вс", velocity = 2f),
-        )
-    } else {
-        listOf(
-            TeamPace(day = "Пн", velocity = 8f),
-            TeamPace(day = "Вт", velocity = 12f),
-            TeamPace(day = "Ср", velocity = 7f),
-            TeamPace(day = "Чт", velocity = 5f),
-            TeamPace(day = "Пт", velocity = 9f),
-            TeamPace(day = "Сб", velocity = 11f),
-            TeamPace(day = "Вс", velocity = 14f),
-        )
-    }
+private fun createTeamPace(snapshot: DashboardSnapshot): List<TeamPace> {
+    return listOf(
+        TeamPace(day = snapshot.primaryEmployeeName.ifBlank { "1" }, velocity = snapshot.primaryEmployeeDone.toFloat()),
+        TeamPace(day = snapshot.secondaryEmployeeName.ifBlank { "2" }, velocity = snapshot.secondaryEmployeeDone.toFloat()),
+    ).filter { it.day.isNotBlank() }
 }
 
 private fun createDashboardAlerts(snapshot: DashboardSnapshot): List<GlobalAlert> {
     return if (snapshot.isProjectDelayed) {
-        listOf(
+        listOfNotNull(
             GlobalAlert(
                 id = "alert_sprint_risk",
                 message = "${snapshot.sprintName}. Риск срыва дедлайна " +
                     "${snapshot.delayTrack} на ${snapshot.delayDays} дня.",
                 severity = "high",
-                triggerSource = "GitHub: 3 ночных коммита",
             ),
-            GlobalAlert(
-                id = "alert_pavel_burnout",
-                message = "Критический риск выгорания: ${snapshot.pavelName} " +
-                    "закрыл только ${snapshot.pavelDone} из ${snapshot.pavelTotal} задач.",
-                severity = "high",
-                triggerSource = "Calendar: 6 часов созвонов",
-            ),
+            snapshot.aiInsight.takeIf { it.isNotBlank() }?.let {
+                GlobalAlert(
+                    id = "alert_ai_advice",
+                    message = it,
+                    severity = "medium",
+                )
+            },
         )
     } else {
-        listOf(
-            GlobalAlert(
-                id = "alert_resolved",
-                message = "Задача перенаправлена на ${snapshot.olegName}. " +
-                    "Новый прогноз проекта: Сдача вовремя.",
-                severity = "success",
-            ),
-        )
+        emptyList()
     }
 }

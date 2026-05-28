@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -43,10 +44,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.predicta.app.feature_dashboard.domain.model.DashboardSnapshot
+import coil.compose.AsyncImage
+import com.predicta.app.feature_employees.domain.model.Employee
 import com.predicta.app.ui.components.AnimatedNumberText
 import com.predicta.app.ui.modifier.liquidGlass
 import com.predicta.app.ui.modifier.pressScale
@@ -93,7 +97,7 @@ private fun TeamVelocityContent(
     onEvent: (EmployeeEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (state.isLoading || state.demoData == null) {
+    if (state.isLoading) {
         Box(
             modifier = modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
@@ -106,8 +110,6 @@ private fun TeamVelocityContent(
         }
         return
     }
-
-    val demo = state.demoData
 
     LazyColumn(
         modifier = modifier
@@ -124,40 +126,30 @@ private fun TeamVelocityContent(
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
-                text = "Бэкенд-команда · ${demo.sprintName}",
+                text = "Данные из Predicta API",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp),
             )
         }
 
-        // ── Oleg's card ─────────────────────────────────────────────────
-        item {
+        items(
+            items = state.employees,
+            key = { it.id },
+        ) { employee ->
             VelocityCard(
-                name = demo.olegName,
-                role = demo.olegRole,
-                done = demo.olegDone,
-                total = demo.olegTotal,
-                isHealthy = true,
-                onClick = { onEvent(EmployeeEvent.SelectEmployee(demo.olegId)) },
+                name = employee.name,
+                role = employee.role,
+                done = employee.doneCount,
+                total = employee.totalCount,
+                isHealthy = employee.burnoutRisk < 0.7f,
+                avatarUrl = employee.avatarUrl,
+                onClick = { onEvent(EmployeeEvent.SelectEmployee(employee.id)) },
             )
         }
 
-        // ── Pavel's card ────────────────────────────────────────────────
         item {
-            VelocityCard(
-                name = demo.pavelName,
-                role = demo.pavelRole,
-                done = demo.pavelDone,
-                total = demo.pavelTotal,
-                isHealthy = false,
-                onClick = { onEvent(EmployeeEvent.SelectEmployee(demo.pavelId)) },
-            )
-        }
-
-        // ── Summary card ────────────────────────────────────────────────
-        item {
-            SummaryCard(demo = demo)
+            SummaryCard(employees = state.employees)
         }
 
         item { Spacer(modifier = Modifier.height(8.dp)) }
@@ -175,6 +167,7 @@ private fun VelocityCard(
     done: Int,
     total: Int,
     isHealthy: Boolean,
+    avatarUrl: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -221,7 +214,6 @@ private fun VelocityCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Avatar
                 Box(
                     modifier = Modifier
                         .size(44.dp)
@@ -229,11 +221,9 @@ private fun VelocityCard(
                         .background(barColor.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Person,
-                        contentDescription = null,
+                    TeamAvatar(
+                        avatarUrl = avatarUrl,
                         tint = barColor,
-                        modifier = Modifier.size(24.dp),
                     )
                 }
 
@@ -300,15 +290,58 @@ private fun VelocityCard(
     }
 }
 
+@Composable
+private fun TeamAvatar(
+    avatarUrl: String?,
+    tint: Color,
+    modifier: Modifier = Modifier,
+) {
+    if (avatarUrl.isNullOrBlank()) {
+        AvatarFallback(tint = tint, modifier = modifier)
+        return
+    }
+
+    val fallbackPainter = rememberVectorPainter(Icons.Outlined.Person)
+
+    AsyncImage(
+        model = avatarUrl,
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        modifier = modifier
+            .fillMaxSize()
+            .clip(CircleShape),
+        placeholder = fallbackPainter,
+        error = fallbackPainter,
+        fallback = fallbackPainter,
+    )
+}
+
+@Composable
+private fun AvatarFallback(
+    tint: Color,
+    modifier: Modifier = Modifier,
+) {
+    Icon(
+        imageVector = Icons.Outlined.Person,
+        contentDescription = null,
+        tint = tint,
+        modifier = modifier.size(24.dp),
+    )
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Summary Card
 // ──────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun SummaryCard(
-    demo: DashboardSnapshot,
+    employees: List<Employee>,
     modifier: Modifier = Modifier,
 ) {
+    val total = employees.sumOf { it.totalCount }
+    val done = employees.sumOf { it.doneCount }
+    val overloaded = employees.count { it.burnoutRisk >= 0.7f }
+
     Card(
         shape = PredictaShapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -335,20 +368,20 @@ private fun SummaryCard(
 
             SummaryRow(
                 label = "Всего задач в спринте",
-                value = "${demo.olegTotal + demo.pavelTotal}",
+                value = "$total",
             )
             SummaryRow(
                 label = "Закрыто",
-                value = "${demo.olegDone + demo.pavelDone}",
+                value = "$done",
             )
             SummaryRow(
                 label = "Осталось",
-                value = "${(demo.olegTotal - demo.olegDone) + (demo.pavelTotal - demo.pavelDone)}",
+                value = "${(total - done).coerceAtLeast(0)}",
             )
             SummaryRow(
-                label = "Статус проекта",
-                value = if (demo.isProjectDelayed) "Задержка ${demo.delayDays} дн." else "В срок",
-                valueColor = if (demo.isProjectDelayed) SemanticCritical else SemanticSuccess,
+                label = "Перегружено",
+                value = "$overloaded",
+                valueColor = if (overloaded > 0) SemanticCritical else SemanticSuccess,
             )
         }
     }

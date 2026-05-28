@@ -60,9 +60,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisGuidelineComponent
@@ -98,8 +101,6 @@ import com.predicta.app.ui.theme.SemanticSuccess
 import com.predicta.app.ui.theme.SemanticWarning
 import com.predicta.app.ui.theme.SurfaceWhite
 import com.predicta.app.ui.theme.TextSecondary
-import kotlinx.coroutines.delay
-
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -114,17 +115,16 @@ fun EmployeeCardScreen(
 
     if (state.isLoading) return
 
-    if (state.isPavel) {
-        PavelCardContent(
+    if (state.showAnalytics) {
+        EmployeeAnalyticsContent(
             state = state,
             onBack = onNavigateBack,
             onReassign = onNavigateToReassign,
             onToggleDeepWork = viewModel::onToggleDeepWork,
-            onToggleChartMode = viewModel::onToggleChartMode,
             modifier = modifier,
         )
     } else {
-        OlegCardContent(
+        EmployeeSummaryContent(
             state = state,
             onBack = onNavigateBack,
             modifier = modifier,
@@ -133,26 +133,17 @@ fun EmployeeCardScreen(
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Pavel's Card — The main demo scenario screen
-// ──────────────────────────────────────────────────────────────────────────────
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PavelCardContent(
+private fun EmployeeAnalyticsContent(
     state: EmployeeCardState,
     onBack: () -> Unit,
     onReassign: (String) -> Unit,
     onToggleDeepWork: () -> Unit,
-    onToggleChartMode: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Simulate AI "typing" effect
-    var showAiInsight by remember { mutableStateOf(false) }
+    var showAiInsight by remember { mutableStateOf(true) }
     var showInsightSheet by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        delay(600)
-        showAiInsight = true
-    }
 
     if (showInsightSheet) {
         AiInsightBottomSheet(
@@ -195,6 +186,7 @@ private fun PavelCardContent(
             EmployeeHeaderCard(
                 name = state.name,
                 role = state.role,
+                avatarUrl = state.avatarUrl,
                 done = state.done,
                 total = state.total,
                 isHealthy = state.isHealthy,
@@ -271,9 +263,6 @@ private fun PavelCardContent(
             ForecastCard(
                 predictedDays = state.predictedDays,
                 deadlineDays = state.deadlineDays,
-                showRecoveryForecast = state.showRecoveryForecast,
-                recoveryForecastData = state.recoveryForecastData,
-                onToggleChartMode = onToggleChartMode,
             )
         }
 
@@ -316,11 +305,8 @@ private fun PavelCardContent(
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Oleg's Card — simple summary
-// ──────────────────────────────────────────────────────────────────────────────
-
 @Composable
-private fun OlegCardContent(
+private fun EmployeeSummaryContent(
     state: EmployeeCardState,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -357,6 +343,7 @@ private fun OlegCardContent(
             EmployeeHeaderCard(
                 name = state.name,
                 role = state.role,
+                avatarUrl = state.avatarUrl,
                 done = state.done,
                 total = state.total,
                 isHealthy = state.isHealthy,
@@ -400,9 +387,9 @@ private fun OlegCardContent(
                         )
                         Text(
                             text = if (assignedTasks.isEmpty()) {
-                                "Олег закрыл все задачи вовремя и готов принять дополнительную нагрузку."
+                                "Сотрудник закрыл все задачи вовремя и готов принять дополнительную нагрузку."
                             } else {
-                                "Олег получил ${assignedTasks.size} новую задачу. Она назначена, но еще не выполнена."
+                                "Сотрудник получил ${assignedTasks.size} новую задачу. Она назначена, но еще не выполнена."
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -426,7 +413,7 @@ private fun OlegCardContent(
 
             itemsIndexed(
                 items = assignedTasks,
-                key = { _, task -> "oleg_${task.id}" },
+                key = { _, task -> "assigned_${task.id}" },
             ) { _, task ->
                 AssignedTaskCard(task = task)
             }
@@ -444,6 +431,7 @@ private fun OlegCardContent(
 private fun EmployeeHeaderCard(
     name: String,
     role: String,
+    avatarUrl: String?,
     done: Int,
     total: Int,
     isHealthy: Boolean,
@@ -478,11 +466,9 @@ private fun EmployeeHeaderCard(
                     .background(statusColor.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Person,
-                    contentDescription = null,
+                EmployeeAvatar(
+                    avatarUrl = avatarUrl,
                     tint = statusColor,
-                    modifier = Modifier.size(32.dp),
                 )
             }
 
@@ -519,6 +505,37 @@ private fun EmployeeHeaderCard(
             }
         }
     }
+}
+
+@Composable
+private fun EmployeeAvatar(
+    avatarUrl: String?,
+    tint: Color,
+    modifier: Modifier = Modifier,
+) {
+    if (avatarUrl.isNullOrBlank()) {
+        Icon(
+            imageVector = Icons.Outlined.Person,
+            contentDescription = null,
+            tint = tint,
+            modifier = modifier.size(32.dp),
+        )
+        return
+    }
+
+    val fallbackPainter = rememberVectorPainter(Icons.Outlined.Person)
+
+    AsyncImage(
+        model = avatarUrl,
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        modifier = modifier
+            .fillMaxSize()
+            .clip(CircleShape),
+        placeholder = fallbackPainter,
+        error = fallbackPainter,
+        fallback = fallbackPainter,
+    )
 }
 
 @Composable
@@ -562,7 +579,7 @@ private fun AssignedTaskCard(
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = "Назначена Олегу · к выполнению",
+                    text = "Назначена сотруднику · к выполнению",
                     style = MaterialTheme.typography.labelSmall,
                     color = SemanticWarning,
                     modifier = Modifier.padding(top = 2.dp),
@@ -576,9 +593,6 @@ private fun AssignedTaskCard(
 private fun ForecastCard(
     predictedDays: Int,
     deadlineDays: Int,
-    showRecoveryForecast: Boolean,
-    recoveryForecastData: List<Float>,
-    onToggleChartMode: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
@@ -595,24 +609,17 @@ private fun ForecastCard(
     val axisGuideline = rememberAxisGuidelineComponent(
         fill = fill(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)),
     )
-    val dayLabels = remember { listOf("Сейчас", "+1д", "+2д", "+3д", "+4д", "+5д", "+6д", "+7д", "+8д") }
+    val dayLabels = remember { listOf("План", "Прогноз") }
     val bottomAxisValueFormatter = remember {
         CartesianValueFormatter { _, value, _ ->
             dayLabels.getOrElse(value.toInt()) { "" }
         }
     }
 
-    LaunchedEffect(showRecoveryForecast, recoveryForecastData) {
+    LaunchedEffect(predictedDays, deadlineDays) {
         modelProducer.runTransaction {
             lineSeries {
-                if (showRecoveryForecast) {
-                    series(recoveryForecastData)
-                } else {
-                    // Plan line (ideal pace)
-                    series(0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0)
-                    // Fact line (Pavel's actual pace — slow)
-                    series(0.0, 0.2, 0.3, 0.5, 0.6, 0.7, 0.9, 1.0, 1.1)
-                }
+                series(deadlineDays.toDouble(), predictedDays.toDouble())
             }
         }
     }
@@ -653,42 +660,20 @@ private fun ForecastCard(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = if (showRecoveryForecast) {
-                    "При включенной защите фокуса риск выгорания плавно снижается."
-                } else {
-                    "С текущим темпом Павел закончит свои задачи через $predictedDays дней вместо $deadlineDays."
-                },
+                text = "Прогноз завершения: $predictedDays дн. Плановый остаток спринта: $deadlineDays дн.",
                 style = MaterialTheme.typography.bodySmall,
-                color = if (showRecoveryForecast) SemanticSuccess else SemanticCritical,
+                color = if (predictedDays <= deadlineDays) SemanticSuccess else SemanticCritical,
                 fontWeight = FontWeight.Medium,
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Legend and Toggle Button
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (showRecoveryForecast) {
-                    LegendItem(color = SemanticSuccess, label = "Прогноз")
-                } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                        LegendItem(color = MaterialTheme.colorScheme.primary, label = "План")
-                        LegendItem(color = SemanticCritical, label = "Факт")
-                    }
-                }
-
-                OutlinedButton(
-                    onClick = onToggleChartMode,
-                    shape = PredictaShapes.medium,
-                ) {
-                    Text(
-                        text = if (showRecoveryForecast) "История нагрузки" else "Прогноз восстановления",
-                        style = MaterialTheme.typography.labelSmall,
-                    )
-                }
+                LegendItem(color = MaterialTheme.colorScheme.primary, label = "Дни")
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -696,21 +681,11 @@ private fun ForecastCard(
             val planLine = LineCartesianLayer.rememberLine(
                 fill = remember(planColor) { LineCartesianLayer.LineFill.single(fill(planColor)) },
             )
-            val factLine = LineCartesianLayer.rememberLine(
-                fill = remember { LineCartesianLayer.LineFill.single(fill(SemanticCritical)) },
-            )
-            val recoveryLine = LineCartesianLayer.rememberLine(
-                fill = remember { LineCartesianLayer.LineFill.single(fill(SemanticSuccess)) },
-            )
 
             CartesianChartHost(
                 chart = rememberCartesianChart(
                     rememberLineCartesianLayer(
-                        lineProvider = if (showRecoveryForecast) {
-                            LineCartesianLayer.LineProvider.series(recoveryLine)
-                        } else {
-                            LineCartesianLayer.LineProvider.series(planLine, factLine)
-                        }
+                        lineProvider = LineCartesianLayer.LineProvider.series(planLine),
                     ),
                     startAxis = VerticalAxis.rememberStart(
                         line = axisLine,

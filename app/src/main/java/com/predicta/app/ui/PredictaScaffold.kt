@@ -58,9 +58,7 @@ import androidx.navigation.navArgument
 import com.predicta.app.R
 import com.predicta.app.core.network.NetworkMonitor
 import com.predicta.app.feature_auth.data.session.UserSessionManager
-import com.predicta.app.feature_auth.presentation.ForgotPasswordScreen
 import com.predicta.app.feature_auth.presentation.LoginScreen
-import com.predicta.app.feature_auth.presentation.RegisterScreen
 import com.predicta.app.feature_auth.presentation.SplashScreen
 import com.predicta.app.feature_connectivity.presentation.NoInternetScreen
 import com.predicta.app.feature_dashboard.presentation.DashboardScreen
@@ -97,8 +95,6 @@ fun PredictaScaffold(
     val showBottomBar = currentRoute in Screen.bottomNavItems.map { it.route }
     val showTopBar = currentRoute !in listOf(
         Screen.Login.route,
-        Screen.Register.route,
-        Screen.ForgotPassword.route,
         Screen.Splash.route,
     )
 
@@ -162,20 +158,6 @@ fun PredictaScaffold(
                             popUpTo(Screen.Login.route) { inclusive = true }
                         }
                     },
-                    onNavigateToRegister = { navController.navigate(Screen.Register.route) },
-                    onNavigateToForgotPassword = { navController.navigate(Screen.ForgotPassword.route) }
-                )
-            }
-
-            composable(Screen.Register.route) {
-                RegisterScreen(
-                    onNavigateBackToLogin = { navController.popBackStack() }
-                )
-            }
-
-            composable(Screen.ForgotPassword.route) {
-                ForgotPasswordScreen(
-                    onNavigateBackToLogin = { navController.popBackStack() }
                 )
             }
 

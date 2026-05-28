@@ -24,8 +24,6 @@ sealed class Screen(
 
     data object Splash : Screen("splash")
     data object Login : Screen("login")
-    data object Register : Screen("register")
-    data object ForgotPassword : Screen("forgot_password")
 
     data object Dashboard : Screen(
         route = "dashboard",

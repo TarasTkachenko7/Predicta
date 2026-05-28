@@ -8,6 +8,7 @@ fun AppError.toUiText(): String {
     return when (this) {
         AppError.Auth -> "Неверные учетные данные"
         AppError.Network -> "Не удалось подключиться к серверу"
+        is AppError.Remote -> message
         is AppError.Unknown -> "Что-то пошло не так. Попробуйте еще раз"
         is AppError.Validation -> toUiText()
     }
@@ -28,9 +29,14 @@ private fun AppError.Validation.toUiText(): String {
             ValidationReason.MISMATCH -> "Пароли не совпадают"
             else -> "Проверьте пароль"
         }
-        ValidationField.NAME -> "Имя не может быть пустым"
+        ValidationField.NAME,
+        ValidationField.FIRST_NAME,
+        -> "Имя не может быть пустым"
+        ValidationField.LAST_NAME -> "Фамилия не может быть пустой"
+        ValidationField.TELEGRAM_NICK -> "Telegram не может быть пустым"
+        ValidationField.PHONE -> "Телефон не может быть пустым"
         ValidationField.RECOVERY_CODE -> "Код не может быть пустым"
     }
 }
 
-private const val MIN_PASSWORD_LENGTH = 5
+private const val MIN_PASSWORD_LENGTH = 6
