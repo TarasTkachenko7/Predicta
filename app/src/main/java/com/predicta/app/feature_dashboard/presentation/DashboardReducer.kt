@@ -11,6 +11,7 @@ fun reduceDashboardSnapshot(
 ): DashboardState {
     return currentState.copy(
         isLoading = false,
+        isRefreshing = false,
         sprintName = snapshot.sprintName,
         isProjectDelayed = snapshot.isProjectDelayed,
         delayDays = snapshot.delayDays,

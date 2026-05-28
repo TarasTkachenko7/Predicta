@@ -21,8 +21,7 @@ sealed class Screen(
     val selectedIcon: ImageVector = Icons.Default.Dashboard,
     val unselectedIcon: ImageVector = Icons.Outlined.Dashboard,
 ) {
-
-    data object Splash : Screen("splash")
+    data object StartupVideo : Screen("startup_video")
     data object Login : Screen("login")
 
     data object Dashboard : Screen(

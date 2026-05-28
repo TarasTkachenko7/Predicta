@@ -29,10 +29,12 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -91,6 +93,7 @@ fun TeamVelocityScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TeamVelocityContent(
     state: EmployeeState,
@@ -111,48 +114,54 @@ private fun TeamVelocityContent(
         return
     }
 
-    LazyColumn(
+    PullToRefreshBox(
+        isRefreshing = state.isRefreshing,
+        onRefresh = { onEvent(EmployeeEvent.Refresh) },
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item {
-            Text(
-                text = "Анализ темпа работы",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = "Данные из Predicta API",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-        }
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            item {
+                Text(
+                    text = "Анализ темпа работы",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = "Данные из Predicta API",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
 
-        items(
-            items = state.employees,
-            key = { it.id },
-        ) { employee ->
-            VelocityCard(
-                name = employee.name,
-                role = employee.role,
-                done = employee.doneCount,
-                total = employee.totalCount,
-                isHealthy = employee.burnoutRisk < 0.7f,
-                avatarUrl = employee.avatarUrl,
-                onClick = { onEvent(EmployeeEvent.SelectEmployee(employee.id)) },
-            )
-        }
+            items(
+                items = state.employees,
+                key = { it.id },
+            ) { employee ->
+                VelocityCard(
+                    name = employee.name,
+                    role = employee.role,
+                    done = employee.doneCount,
+                    total = employee.totalCount,
+                    isHealthy = employee.burnoutRisk < 0.7f,
+                    avatarUrl = employee.avatarUrl,
+                    onClick = { onEvent(EmployeeEvent.SelectEmployee(employee.id)) },
+                )
+            }
 
-        item {
-            SummaryCard(employees = state.employees)
-        }
+            item {
+                SummaryCard(employees = state.employees)
+            }
 
-        item { Spacer(modifier = Modifier.height(8.dp)) }
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+        }
     }
 }
 

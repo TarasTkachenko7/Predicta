@@ -12,7 +12,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,8 +39,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,11 +52,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.predicta.app.R
 import com.predicta.app.core.network.NetworkMonitor
 import com.predicta.app.feature_auth.data.session.UserSessionManager
 import com.predicta.app.feature_auth.presentation.LoginScreen
-import com.predicta.app.feature_auth.presentation.SplashScreen
+import com.predicta.app.feature_auth.presentation.StartupVideoScreen
 import com.predicta.app.feature_connectivity.presentation.NoInternetScreen
 import com.predicta.app.feature_dashboard.presentation.DashboardScreen
 import com.predicta.app.feature_employees.presentation.EmployeeCardScreen
@@ -95,7 +91,7 @@ fun PredictaScaffold(
     val showBottomBar = currentRoute in Screen.bottomNavItems.map { it.route }
     val showTopBar = currentRoute !in listOf(
         Screen.Login.route,
-        Screen.Splash.route,
+        Screen.StartupVideo.route,
     )
 
     Scaffold(
@@ -124,7 +120,7 @@ fun PredictaScaffold(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Splash.route,
+            startDestination = Screen.StartupVideo.route,
             modifier = Modifier.fillMaxSize(),
             enterTransition = {
                 fadeIn(tween(220)) + slideInHorizontally { it / 6 }
@@ -139,14 +135,14 @@ fun PredictaScaffold(
                 fadeOut(tween(140)) + slideOutHorizontally { it / 8 }
             },
         ) {
-            composable(Screen.Splash.route) {
-                SplashScreen(
-                    onSplashComplete = {
+            composable(Screen.StartupVideo.route) {
+                StartupVideoScreen(
+                    onVideoFinished = {
                         val destination = if (session.isLoggedIn) Screen.Dashboard.route else Screen.Login.route
                         navController.navigate(destination) {
-                            popUpTo(Screen.Splash.route) { inclusive = true }
+                            popUpTo(Screen.StartupVideo.route) { inclusive = true }
                         }
-                    }
+                    },
                 )
             }
 

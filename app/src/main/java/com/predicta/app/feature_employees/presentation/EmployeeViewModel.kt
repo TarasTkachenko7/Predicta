@@ -42,16 +42,30 @@ class EmployeeViewModel(
 
     private fun loadEmployees() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
+            _state.update { current ->
+                if (current.employees.isEmpty()) {
+                    current.copy(isLoading = true, isRefreshing = false, error = null)
+                } else {
+                    current.copy(isRefreshing = true, error = null)
+                }
+            }
             when (val result = getEmployeesUseCase()) {
                 is AppResult.Success -> {
                     _state.update {
-                        it.copy(isLoading = false, employees = result.value)
+                        it.copy(
+                            isLoading = false,
+                            isRefreshing = false,
+                            employees = result.value,
+                        )
                     }
                 }
                 is AppResult.Failure -> {
                     _state.update {
-                        it.copy(isLoading = false, error = result.error.toUiText())
+                        it.copy(
+                            isLoading = false,
+                            isRefreshing = false,
+                            error = result.error.toUiText(),
+                        )
                     }
                 }
             }

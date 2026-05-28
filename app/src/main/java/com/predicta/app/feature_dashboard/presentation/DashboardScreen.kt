@@ -31,10 +31,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -110,6 +112,7 @@ fun DashboardScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DashboardContent(
     state: DashboardState,
@@ -130,75 +133,77 @@ private fun DashboardContent(
         return
     }
 
-    LazyColumn(
+    PullToRefreshBox(
+        isRefreshing = state.isRefreshing,
+        onRefresh = { onEvent(DashboardEvent.Refresh) },
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        // ── Section: Sprint Status Widget ────────────────────────────────
-        item {
-            SprintStatusCard(
-                sprintName = state.sprintName,
-                isDelayed = state.isProjectDelayed,
-                delayDays = state.delayDays,
-                delayTrack = state.delayTrack,
-                completionPercent = state.sprintCompletionPercent,
-                elapsedDays = state.sprintElapsedDays,
-                totalDays = state.sprintTotalDays,
-                hasBeenReassigned = state.hasBeenReassigned,
-            )
-        }
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            item {
+                SprintStatusCard(
+                    sprintName = state.sprintName,
+                    isDelayed = state.isProjectDelayed,
+                    delayDays = state.delayDays,
+                    delayTrack = state.delayTrack,
+                    completionPercent = state.sprintCompletionPercent,
+                    elapsedDays = state.sprintElapsedDays,
+                    totalDays = state.sprintTotalDays,
+                    hasBeenReassigned = state.hasBeenReassigned,
+                )
+            }
 
-        // ── Section: Sprint Velocity Chart ──────────────────────────────
-        item {
-            Text(
-                text = "Темп команды (Story Points / день)",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold,
-            )
-        }
-
-        item {
-            SprintVelocityChart(
-                teamPace = state.teamPace,
-                isDelayed = state.isProjectDelayed,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(220.dp),
-            )
-        }
-
-        // ── Section: AI Alerts ──────────────────────────────────────────
-        if (state.alerts.isNotEmpty()) {
             item {
                 Text(
-                    text = "Предупреждения",
+                    text = "Темп команды (Story Points / день)",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
 
-            items(
-                items = state.alerts,
-                key = { it.id },
-            ) { alert ->
-                AlertCard(
-                    alert = alert,
-                    onResolve = { onEvent(DashboardEvent.AlertClicked(alert.id)) },
+            item {
+                SprintVelocityChart(
+                    teamPace = state.teamPace,
+                    isDelayed = state.isProjectDelayed,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .animateContentSize(),
+                        .height(220.dp),
                 )
             }
-        }
 
-        // Bottom spacer for comfortable scrolling above the nav bar
-        item { Spacer(modifier = Modifier.height(8.dp)) }
+            if (state.alerts.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Предупреждения",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+
+                items(
+                    items = state.alerts,
+                    key = { it.id },
+                ) { alert ->
+                    AlertCard(
+                        alert = alert,
+                        onResolve = { onEvent(DashboardEvent.AlertClicked(alert.id)) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .animateContentSize(),
+                    )
+                }
+            }
+
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+        }
     }
 }
 

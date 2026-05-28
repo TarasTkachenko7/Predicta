@@ -8,6 +8,7 @@ import com.predicta.app.feature_dashboard.domain.model.TeamPace
  */
 data class DashboardState(
     val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
     val sprintName: String = "",
     val isProjectDelayed: Boolean = false,
     val delayDays: Int = 0,
